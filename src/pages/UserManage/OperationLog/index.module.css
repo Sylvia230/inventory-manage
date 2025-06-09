@@ -1,0 +1,12 @@
+.container {
+  padding: 24px;
+  background: #fff;
+  min-height: calc(100vh - 48px);
+}
+
+.header {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+} 

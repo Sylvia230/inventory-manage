@@ -18,5 +18,18 @@ export default defineConfig({
 		alias: {
 			'@': fileURLToPath(new URL('./src', import.meta.url))
 		}
-	}
+	},
+	server: {
+		hmr: true,
+		host: true,
+		// allowedHosts: ['dayin.kuaidizs.cn','multishoptest.kuaidizs.cn'],
+		proxy: {
+		  ['/api']: {
+			target: 'http://120.26.232.36:9001/gdv',
+			// target: 'http://multishop.kuaidizs.cn',
+			changeOrigin: true,
+			rewrite: (path) => path.replace(/^\/api/, ''),
+		  },
+		}
+	  },
 })

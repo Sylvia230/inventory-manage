@@ -20,7 +20,7 @@ function stringify(data:any) {
 }
 
 const instance = axios.create({
-	baseURL: BASE_URL,
+	baseURL: '/api',
 	headers: {
 		"Content-Type": "application/json; charset=utf-8",
 	} as AxiosRequestHeaders,
@@ -45,13 +45,17 @@ interface ResponseConfig extends AxiosResponse{
 
 // **路由请求拦截**
 instance.interceptors.request.use(
-	(config: RequestConfig) => {
+	(config) => {
 		// 配置baseURL
 		let headerIncludeForm = (config.headers?.['Content-Type'] as string)?.indexOf(CONTENTTYPE_FORM) > -1;
 		if (headerIncludeForm && config.method === 'post') {
 			config.data = stringify(config.data);
 		}
-
+		// 在这里可以添加token等认证信息
+		const token = localStorage.getItem('token')
+		if (token) {
+			config.headers.Authorization = `Bearer ${token}`
+		}
 		return config;
 	},
 	(error) => Promise.reject(error.response)

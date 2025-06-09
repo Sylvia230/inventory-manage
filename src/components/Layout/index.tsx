@@ -4,7 +4,6 @@ import {  Outlet, useLocation, useMatches } from 'react-router-dom'
 
 import Loading from '../Loading'
 
-// import { useEmotionCss } from '../hooks'
 import { menuItems } from '../../router'
 import Header from './header'
 
@@ -34,7 +33,7 @@ export default function AdminLayout() {
         <Menu
           theme="dark"
           mode="inline"
-          style={{ height: 'calc(100vh - 48px)' }}
+         style={{ height: '100vh', overflowY: 'scroll' }}
           items={menuItems}
           selectedKeys={selectedKeys}
           defaultOpenKeys={defaultOpenKeys}

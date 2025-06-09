@@ -12,7 +12,7 @@ export type MenuRoute = {
   children?: MenuRoute[]
 }
 
-export type RoutesType = Pick<MenuRoute, 'path' | 'element' | 'loader'> & {
+export type RoutesType = Pick<MenuRoute, 'path' | 'name' | 'element' | 'loader'> & {
   children?: RoutesType[]
 }
 
