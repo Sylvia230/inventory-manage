@@ -1,9 +1,8 @@
 import React from 'react'
+import { Outlet } from 'react-router-dom'
 
-const OrderManage = () => {
-  return (
-    <div>OrderManage</div>
-  )
+const OrderManage: React.FC = () => {
+  return <Outlet />
 }
 
 export default OrderManage

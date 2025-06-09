@@ -30,6 +30,8 @@ const StaffManage = lazy(() => import('../pages/UserManage/Staff/index'));
 const DepartmentManage = lazy(() => import('../pages/UserManage/Department/index'));
 const RoleManage = lazy(() => import('../pages/UserManage/Role/index'));
 const OperationLog = lazy(() => import('../pages/UserManage/OperationLog/index'));
+const OrderList = lazy(() => import('../pages/OrderManage/OrderList/index'));
+const OrderDetail = lazy(() => import('../pages/OrderManage/OrderDetail/index'));
 const menuRoutes: MenuRoute[] = [
   {
     path: '/',
@@ -43,7 +45,13 @@ const menuRoutes: MenuRoute[] = [
           {
             name: '订单列表',
             path: '/orderManage/list',
-            element: <OrderManage />
+            element: <OrderList />
+          },
+          {
+            name: '订单详情',
+            path: '/orderManage/detail/:id',
+            element: <OrderDetail />,
+            hideInMenu: true
           }
         ]
       },
