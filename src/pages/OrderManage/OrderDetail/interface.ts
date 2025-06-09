@@ -68,7 +68,47 @@ export interface OrderDetailInfo {
         openingBank: string;
         bankAccount: string;
         accountStatus: string;
-    }[];
+    };
+    disbursementAccount?: {
+        accountName: string;
+        bankAccount: string;
+        openingBank: string;
+    };
+    supplierCollectionAccount?: {
+        accountName: string;
+        bankAccount: string;
+        openingBank: string;
+    };
+    dealerRepaymentAccount?: {
+        accountName: string;
+        bankAccount: string;
+        openingBank: string;
+    };
+    capitalCollectionAccount?: {
+        accountName: string;
+        bankAccount: string;
+        openingBank: string;
+    };
+    marginCollectionAccount?: {
+        accountName: string;
+        bankAccount: string;
+        openingBank: string;
+    };
+    serviceFeeCollectionAccount?: {
+        accountName: string;
+        bankAccount: string;
+        openingBank: string;
+    };
+    storageFeeCollectionAccount?: {
+        accountName: string;
+        bankAccount: string;
+        openingBank: string;
+    };
+    logisticsFeeCollectionAccount?: {
+        accountName: string;
+        bankAccount: string;
+        openingBank: string;
+    };
 }
 
 export interface VehicleData {

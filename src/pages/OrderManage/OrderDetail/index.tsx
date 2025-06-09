@@ -116,14 +116,52 @@ const OrderDetail: React.FC = () => {
             settlementTime: '2024-03-25 16:00:00',
           },
         ],
-        accountInfo: [
-          {
-            accountName: '张三汽车销售有限公司',
-            openingBank: '中国工商银行',
-            bankAccount: '6222020300012345678',
-            accountStatus: 'normal',
-          },
-        ],
+        accountInfo: {
+          accountName: '张三汽车销售有限公司',
+          openingBank: '中国工商银行',
+          bankAccount: '6222020300012345678',
+          accountStatus: 'normal',
+        },
+        disbursementAccount: {
+          accountName: '出款公司',
+          bankAccount: '6222020300098765432',
+          openingBank: '中国建设银行',
+        },
+        supplierCollectionAccount: {
+          accountName: '供应商A',
+          bankAccount: '6222020300011223344',
+          openingBank: '中国农业银行',
+        },
+        dealerRepaymentAccount: {
+          accountName: '经销商B',
+          bankAccount: '6222020300055667788',
+          openingBank: '中国银行',
+        },
+        capitalCollectionAccount: {
+          accountName: '资方C',
+          bankAccount: '6222020300099887766',
+          openingBank: '招商银行',
+        },
+        marginCollectionAccount: {
+          accountName: '保证金专用',
+          bankAccount: '6222020300011122233',
+          openingBank: '浦发银行',
+        },
+        serviceFeeCollectionAccount: {
+          accountName: '服务费专用',
+          bankAccount: '6222020300044455566',
+          openingBank: '交通银行',
+        },
+        storageFeeCollectionAccount: {
+          accountName: '仓储费专用',
+          bankAccount: '6222020300077788899',
+          openingBank: '中信银行',
+        },
+        logisticsFeeCollectionAccount: {
+          accountName: '物流费专用',
+          bankAccount: '6222020300000011122',
+          openingBank: '光大银行',
+        },
       });
     } catch (error) {
       message.error('获取订单详情失败');
