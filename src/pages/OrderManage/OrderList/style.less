@@ -1,0 +1,139 @@
+.order-table-wrapper {
+  width: 100%;
+  
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    
+    th, td {
+      padding: 12px 8px;
+      border: 1px solid #e8e8e8;
+    }
+    
+    th {
+      background: #fafafa;
+      font-weight: 500;
+    }
+  }
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fafafa;
+
+  .order-status {
+    font-size: 14px;
+    padding: 4px 8px;
+  }
+
+  .action-buttons {
+    .ant-btn {
+      margin: 0 4px 4px 0;
+    }
+  }
+}
+
+.order-info {
+  padding: 8px 16px;
+  
+  .order-number {
+    color: #3572B0;
+    cursor: pointer;
+    margin: 0 4px;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.task-status {
+  color: #ff4d4f;
+  padding: 8px 16px;
+  
+  .status-label {
+    display: inline-block;
+    margin-right: 8px;
+  }
+}
+
+.order-status-info {
+  color: #ff4d4f;
+  padding: 8px 16px;
+}
+
+.supplier-info {
+  .supplier-status {
+    color: #ff4d4f;
+    margin-top: 8px;
+  }
+}
+
+.vehicle-table-container {
+  height: 150px;
+  overflow: auto;
+  padding: 0;
+  
+  .table__inner {
+    width: 100%;
+    
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    
+    th {
+      background: #fafafa;
+      font-weight: 500;
+    }
+  }
+}
+
+// 自定义滚动条样式
+.vehicle-table-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.vehicle-table-container::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.vehicle-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+// Element UI 按钮样式覆盖
+.el-button {
+  &.el-button--primary {
+    background-color: #1890ff;
+    border-color: #1890ff;
+    color: #fff;
+    
+    &:hover {
+      background-color: #40a9ff;
+      border-color: #40a9ff;
+    }
+  }
+  
+  &.el-button--danger {
+    background-color: #ff4d4f;
+    border-color: #ff4d4f;
+    color: #fff;
+    
+    &:hover {
+      background-color: #ff7875;
+      border-color: #ff7875;
+    }
+  }
+  
+  &.el-button--mini {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+} 

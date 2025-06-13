@@ -22,12 +22,12 @@ export async function getStaffList(params: any) {
   return axios.get<{
     data: StaffData[]
     total: number
-  }>('/api/staff/list', params)
+  }>('/gdv/staff/list', params)
 }
 
 // 新增员工
 export async function addStaff(data: any) {
-  return axios.post<StaffData>('/api/staff/add',data)
+  return axios.post<StaffData>('/gdv/staff/add',data)
 }
 
 // 编辑员工
@@ -38,4 +38,17 @@ export async function updateStaff(data: StaffData) {
 // 删除员工
 export async function deleteStaff(data: any) {
   return axios.post<void>('/api/staff/delete', data)
+}
+
+interface ResetPasswordParams {
+  staffId: string;
+  newPassword: string;
+}
+
+/**
+ * 重置员工密码
+ * @param params 重置密码参数
+ */
+export async function resetStaffPassword(params: ResetPasswordParams) {
+  return axios.post('/staff/reset-password',params );
 } 

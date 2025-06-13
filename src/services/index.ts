@@ -20,7 +20,9 @@ function stringify(data:any) {
 }
 
 const instance = axios.create({
-	baseURL: '/api',
+	// baseURL: process.env.NEXT_PUBLIC_API_URL, // 使用环境变量或默认值
+	baseURL: 'http://120.26.232.36/', // 使用环境变量或默认值,
+	// baseURL: 'http://127.0.0.1:9001/api',
 	headers: {
 		"Content-Type": "application/json; charset=utf-8",
 	} as AxiosRequestHeaders,
@@ -63,25 +65,33 @@ instance.interceptors.request.use(
 
 // http 响应 拦截器
 instance.interceptors.response.use(
-	(response: ResponseConfig) => {
-		const {
-			isHideError,
-		} = response.config;
+	(response: any) => {
+		console.log('....response', response)
 
 		// 下载类型的接口
 		if (response.headers["Content-Type"] === "multipart/form-data") {
 			return response;
 		}
 		
-		let result = response.data?.code;
-		if (result !== 'biz.succ') {
-			const errorMsg = response.data?.subMsg || response.data?.msg || '请求失败';
-			!isHideError && message.error(errorMsg, 3);
-			return Promise.reject(response.data);
-		}
 		return response.data;
 	},
 	(error) => {
+		// 处理 403 状态码
+		if (error?.response?.status === 403) {
+			message.error('请选登录');
+			// 可以在这里添加重定向到登录页面的逻辑
+			window.location.href = '#/login';
+		} else if (error?.response?.status === 401) {
+			message.error('未授权，请重新登录');
+			// 可以在这里添加重定向到登录页面的逻辑
+			window.location.href = '#/login';
+		} else if (error?.response?.status === 404) {
+			message.error('请求的资源不存在');
+		} else if (error?.response?.status === 500) {
+			message.error('服务器错误');
+		} else {
+			message.error(error?.response?.data?.message || '请求失败');
+		}
 		return Promise.reject(error?.response || error);
 	},
 );

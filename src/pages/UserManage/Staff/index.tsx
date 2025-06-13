@@ -4,6 +4,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { SearchOutlined } from '@ant-design/icons'
 import styles from './index.module.css'
 import { StaffData, getStaffList, addStaff, updateStaff, deleteStaff } from '@/services/staff'
+import ResetPasswordModal from './components/ResetPasswordModal';
 
 // 模拟部门和角色数据
 const departments = [
@@ -34,6 +35,8 @@ const StaffManage: React.FC = () => {
     pageSize: 10,
     total: 0,
   })
+  const [resetModalVisible, setResetModalVisible] = useState(false);
+  const [currentStaff, setCurrentStaff] = useState<StaffData | null>(null);
 // 模拟数据
 const mockData: StaffData[] = [
     {
@@ -197,10 +200,38 @@ const mockData: StaffData[] = [
           <Button type="link" danger onClick={() => handleDelete(record)}>
             删除
           </Button>
+          <Button type="link" onClick={() => showResetModal(record)}>
+            重置密码
+          </Button>
         </Space>
       ),
     },
   ]
+
+   // 打开重置密码弹窗
+   const showResetModal = (record: StaffData) => {
+    setCurrentStaff(record);
+    setResetModalVisible(true);
+  };
+
+   // 处理重置密码
+   const handleResetPassword = async (values: { password: string; confirmPassword: string }) => {
+    if (!currentStaff) return;
+    
+    try {
+      setLoading(true);
+      await resetStaffPassword({
+        staffId: currentStaff.id,
+        newPassword: values.password,
+      });
+      message.success('密码重置成功');
+      setResetModalVisible(false);
+    } catch (error) {
+      message.error('密码重置失败，请重试');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className={styles.container}>
@@ -294,6 +325,12 @@ const mockData: StaffData[] = [
           </Form.Item>
         </Form>
       </Modal>
+      <ResetPasswordModal
+        visible={resetModalVisible}
+        onCancel={() => setResetModalVisible(false)}
+        onOk={handleResetPassword}
+        // loading={loading}
+      />
     </div>
   )
 }

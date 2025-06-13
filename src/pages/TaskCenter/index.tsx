@@ -1,9 +1,8 @@
 import React from 'react'
+import { Outlet } from 'react-router-dom'
 
 const TaskCenter = () => {
-  return (
-    <div>TaskCenter</div>
-  )
+  return <Outlet />
 }
 
 export default TaskCenter

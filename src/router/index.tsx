@@ -12,15 +12,16 @@
 
 import { TableOutlined } from '@ant-design/icons'
 import  { lazy } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 
 import AdminLayout from '../components/Layout'
 import { BreadcrumbMap, MenuItem, MenuRoute, RoutesType } from './interface'
 const Login = lazy(() => import('../pages/Login'));
-const OrderManage = lazy(() => import('../pages/OrderManage'));
+// const OrderManage = lazy(() => import('../pages/OrderManage/'));
 const TaskCenter = lazy(() => import('../pages/TaskCenter'));
 const WareHouse = lazy(() => import('../pages/WareHouse'));
 const MerchantManage = lazy(() => import('../pages/MerchantManage'));
+const SignatureManage = lazy(() => import('../pages/MerchantManage/Signature'));
 const Waybill = lazy(() => import('../pages/Waybill'));
 const FinanceManage = lazy(() => import('../pages/FinanceManage'));
 const ContractManage = lazy(() => import('../pages/ContractManage'));
@@ -32,56 +33,72 @@ const RoleManage = lazy(() => import('../pages/UserManage/Role/index'));
 const OperationLog = lazy(() => import('../pages/UserManage/OperationLog/index'));
 const OrderList = lazy(() => import('../pages/OrderManage/OrderList/index'));
 const OrderDetail = lazy(() => import('../pages/OrderManage/OrderDetail/index'));
+const VehicleManage = lazy(() => import('../pages/VehicleManage/index'));
+const PriceCheck = lazy(() => import('../pages/TaskCenter/PriceCheck'));
+const PriceCheckDetail =  lazy(() => import('../pages/TaskCenter/PriceCheck/PriceCheckDetail'));
 const menuRoutes: MenuRoute[] = [
   {
     path: '/',
     element: <AdminLayout />,
     children: [
+
       {
-        name: '订单管理',
         path: '/orderManage',
-        element: <OrderManage />,
+        name: '订单管理',
+        element: <OrderList />,
         children: [
           {
-            name: '订单列表',
             path: '/orderManage/list',
+            name: '订单列表',
             element: <OrderList />
           },
           {
-            name: '订单详情',
             path: '/orderManage/detail/:id',
+            name: '订单详情',
             element: <OrderDetail />,
             hideInMenu: true
           }
         ]
       },
       {
-        name: '用户管理',
         path: '/userManage',
-        // hideInMenu: true,
+        name: '用户管理',
         element: <UserManage />,
         children: [
           {
-            name: '员工管理',
             path: '/userManage/staff',
+            name: '员工管理',
             element: <StaffManage />
           },
           {
-            name: '部门管理',
             path: '/userManage/department',
+            name: '部门管理',
             element: <DepartmentManage />
           },
           {
-            name: '角色管理',
             path: '/userManage/role',
+            name: '角色管理',
             element: <RoleManage />
           },
           {
-            name: '操作记录',
             path: '/userManage/record',
+            name: '操作记录',
             element: <OperationLog />
           },
         ]
+      },
+       // 车型管理路由
+      {
+        path: '/vehicle',
+        name: '车型管理',
+        element: <VehicleManage/>,
+        children: [
+          {
+            path: '/vehicle/list',
+            name: '车系准入',
+            element: <VehicleManage/>,
+          },
+        ],
       },
       {
         name: '任务中心',
@@ -90,8 +107,14 @@ const menuRoutes: MenuRoute[] = [
         children: [
           {
             name: '车辆核价',
-            path: '/taskCenter/price',
-            element: <TaskCenter />
+            path: '/taskCenter/priceCheck',
+            element: <PriceCheck />
+          },
+          {
+            name: '核价处理',
+            path: '/taskCenter/priceCheckDetail/:id',
+            element: <PriceCheckDetail />,
+            hideInMenu: true
           },
           {
             name: '推送到资方',
@@ -161,8 +184,8 @@ const menuRoutes: MenuRoute[] = [
           },
           {
             name: '签章人管理',
-            path: '/merchant/sign',
-            element: <MerchantManage />
+            path: '/merchant/signature',
+            element: <SignatureManage />
           },
         ]
       },
@@ -224,11 +247,6 @@ const menuRoutes: MenuRoute[] = [
       },
     ],
   },
-   {
-    path: '/login',
-    name: '登录',
-    element: <Login />,
-  },
 ]
 const extractMenuItems = (menuRoutes: MenuRoute[] = []) => {
   const breadcrumbNameMap: BreadcrumbMap<MenuRoute> = {}
@@ -242,7 +260,7 @@ const extractMenuItems = (menuRoutes: MenuRoute[] = []) => {
           menuItems.push({
             key: path,
             icon: icon,
-            label: children?.length ? name : <Link to={path}>{name}</Link>,
+            label: name,
             ...(children?.length
               ? {
                   children: recurExtractMenuItems(children, [])

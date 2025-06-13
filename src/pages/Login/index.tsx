@@ -14,15 +14,27 @@ const Login = () => {
   const onFinish = async (values: { phone: string; password: string }) => {
     try {
       setLoading(true)
-      GetLoginInfoApi({
+      let res = await GetLoginInfoApi({
         username: values.phone,
         password: values.password
       })
-      // TODO: 实现登录逻辑
-      console.log('登录信息:', values)
-      message.success('登录成功')
-      // 显示修改密码弹窗
-      setChangePasswordVisible(true)
+      console.log('login...res ', res)
+      
+      // 保存 token 到 localStorage
+      if (res?.jwt) {
+        localStorage.setItem('token', res.jwt)
+        message.success('登录成功')
+        
+        // 检查密码是否为123456
+        if (values.password === '123456') {
+          setChangePasswordVisible(true)
+        } else {
+          // 如果不是默认密码，直接跳转到首页
+          navigate('/orderManage/list')
+        }
+      } else {
+        message.error('登录失败：未获取到有效的登录凭证')
+      }
     } catch (error) {
       message.error('登录失败')
     } finally {
@@ -63,13 +75,12 @@ const Login = () => {
           <Form.Item
             name="phone"
             rules={[
-              { required: true, message: '请输入手机号' },
-              { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' }
+              { required: true, message: '请输入用户名' },
             ]}
           >
             <Input
               prefix={<UserOutlined />}
-              placeholder="请输入手机号"
+              placeholder="请输入用户名"
               maxLength={11}
             />
           </Form.Item>

@@ -4,6 +4,12 @@
   align-items: center;
   min-height: 100vh;
   background-color: #f0f2f5;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  z-index: 1000000;
+  height: 100vh;
 }
 
 .loginCard {

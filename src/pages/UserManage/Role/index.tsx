@@ -1,10 +1,81 @@
 import React, { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Select, Space, message } from 'antd'
+import { Table, Button, Modal, Form, Input, Select, Space, message, Tree } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import type { DataNode } from 'antd/es/tree'
 import styles from './index.module.css'
 import { getStaffList } from '@/services/staff'
 import { StaffData } from '@/services/staff'
 import { RoleData, getRoleList, addRole, updateRole, deleteRole } from '@/services/role'
+
+// 模拟菜单权限数据
+const menuPermissions: DataNode[] = [
+  {
+    title: '系统管理',
+    key: 'system',
+    children: [
+      {
+        title: '用户管理',
+        key: 'system:user',
+        children: [
+          { title: '查看用户', key: 'system:user:view' },
+          { title: '新增用户', key: 'system:user:add' },
+          { title: '编辑用户', key: 'system:user:edit' },
+          { title: '删除用户', key: 'system:user:delete' },
+        ],
+      },
+      {
+        title: '角色管理',
+        key: 'system:role',
+        children: [
+          { title: '查看角色', key: 'system:role:view' },
+          { title: '新增角色', key: 'system:role:add' },
+          { title: '编辑角色', key: 'system:role:edit' },
+          { title: '删除角色', key: 'system:role:delete' },
+        ],
+      },
+    ],
+  },
+  {
+    title: '订单管理',
+    key: 'order',
+    children: [
+      {
+        title: '订单列表',
+        key: 'order:list',
+        children: [
+          { title: '查看订单', key: 'order:list:view' },
+          { title: '新增订单', key: 'order:list:add' },
+          { title: '编辑订单', key: 'order:list:edit' },
+          { title: '删除订单', key: 'order:list:delete' },
+        ],
+      },
+      {
+        title: '订单审核',
+        key: 'order:audit',
+        children: [
+          { title: '查看审核', key: 'order:audit:view' },
+          { title: '审核操作', key: 'order:audit:action' },
+        ],
+      },
+    ],
+  },
+  {
+    title: '车辆管理',
+    key: 'vehicle',
+    children: [
+      {
+        title: '车辆列表',
+        key: 'vehicle:list',
+        children: [
+          { title: '查看车辆', key: 'vehicle:list:view' },
+          { title: '新增车辆', key: 'vehicle:list:add' },
+          { title: '编辑车辆', key: 'vehicle:list:edit' },
+          { title: '删除车辆', key: 'vehicle:list:delete' },
+        ],
+      },
+    ],
+  },
+]
 
 // 模拟员工数据
 const mockStaffList: StaffData[] = [
@@ -126,6 +197,7 @@ const RoleManage: React.FC = () => {
     pageSize: 10,
     total: 0,
   })
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
 
   // 获取员工列表
   const fetchStaffList = async () => {
@@ -229,6 +301,7 @@ const RoleManage: React.FC = () => {
     setModalType('edit')
     setCurrentRecord(record)
     setModalVisible(true)
+    setSelectedPermissions(record.permissions || [])
     form.setFieldsValue({
       ...record,
       staffIds: record.staffIds,
@@ -259,19 +332,29 @@ const RoleManage: React.FC = () => {
   const handleModalSubmit = async () => {
     try {
       const values = await form.validateFields()
+      const submitData = {
+        ...values,
+        permissions: selectedPermissions,
+      }
+      
       if (modalType === 'add') {
-        await addRole(values)
+        await addRole(submitData)
         message.success('新增成功')
       } else {
-        await updateRole({ ...currentRecord, ...values } as RoleData)
+        await updateRole({ ...currentRecord, ...submitData } as RoleData)
         message.success('编辑成功')
       }
       setModalVisible(false)
       form.resetFields()
+      setSelectedPermissions([])
       fetchRoleList()
     } catch (error) {
       console.error('表单提交失败:', error)
     }
+  }
+
+  const onCheck = (checkedKeys: any) => {
+    setSelectedPermissions(checkedKeys)
   }
 
   return (
@@ -301,9 +384,10 @@ const RoleManage: React.FC = () => {
         onCancel={() => {
           setModalVisible(false)
           form.resetFields()
+          setSelectedPermissions([])
         }}
         destroyOnClose
-        width={600}
+        width={800}
       >
         <Form
           form={form}
@@ -329,6 +413,21 @@ const RoleManage: React.FC = () => {
                 label: staff.name,
                 value: staff.id,
               }))}
+            />
+          </Form.Item>
+          <Form.Item
+            label="菜单权限"
+            required
+            tooltip="请选择该角色可以访问的菜单和操作权限"
+          >
+            <Tree
+              checkable
+              defaultExpandAll
+              checkedKeys={selectedPermissions}
+              onCheck={onCheck}
+              treeData={menuPermissions}
+              height={400}
+              style={{ border: '1px solid #d9d9d9', padding: '8px', borderRadius: '4px' }}
             />
           </Form.Item>
         </Form>
