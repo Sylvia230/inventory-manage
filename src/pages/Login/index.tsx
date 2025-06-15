@@ -25,13 +25,13 @@ const Login = () => {
         localStorage.setItem('token', res.jwt)
         message.success('登录成功')
         
-        // 检查密码是否为123456
-        if (values.password === '123456') {
-          setChangePasswordVisible(true)
-        } else {
+        // // 检查密码是否为123456
+        // if (values.password === '123456') {
+        //   setChangePasswordVisible(true)
+        // } else {
           // 如果不是默认密码，直接跳转到首页
           navigate('/orderManage/list')
-        }
+        // }
       } else {
         message.error('登录失败：未获取到有效的登录凭证')
       }

@@ -1,0 +1,77 @@
+.container {
+  padding: 24px;
+  background: #fff;
+
+  :global {
+    .ant-form {
+      margin-bottom: 24px;
+    }
+
+    .ant-table-wrapper {
+      background: #fff;
+    }
+  }
+}
+
+.receiptCard {
+  margin-top: 24px;
+  overflow: scroll;
+  :global {
+    .ant-card-body {
+        padding: 0px;
+    }
+  }
+}
+
+.receiptHeader {
+  display: flex;
+//   justify-content: space-between;
+  align-items: center;
+  min-width: 1500px;
+  padding: 12px;
+}
+
+.receiptContent {
+  min-width: 1500px;
+  margin: 0px !important;
+//   margin-bottom: 24px;
+}
+
+.infoCard {
+  height: 100%;
+  border-radius: 0px;
+  &:not(:last-child) {
+    border-right: none;
+  }
+  :global {
+    .ant-card-head {
+      min-height: 40px;
+      padding: 0 12px;
+      
+      .ant-card-head-title {
+        padding: 8px 0;
+        font-size: 14px;
+      }
+    }
+    
+    .ant-card-body {
+      padding: 12px;
+    }
+    
+    .ant-descriptions-item-label {
+      color: rgba(0, 0, 0, 0.45);
+    }
+  }
+}
+
+.paymentDetail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  font-size: 14px;
+  
+  .ant-typography {
+    margin-right: 8px;
+  }
+} 

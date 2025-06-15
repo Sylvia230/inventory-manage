@@ -12,7 +12,7 @@
 
 import { TableOutlined } from '@ant-design/icons'
 import  { lazy } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, RouteObject } from 'react-router-dom'
 
 import AdminLayout from '../components/Layout'
 import { BreadcrumbMap, MenuItem, MenuRoute, RoutesType } from './interface'
@@ -25,7 +25,11 @@ const SignatureManage = lazy(() => import('../pages/MerchantManage/Signature'));
 const Waybill = lazy(() => import('../pages/Waybill'));
 const FinanceManage = lazy(() => import('../pages/FinanceManage'));
 const ContractManage = lazy(() => import('../pages/ContractManage'));
+const ContractList = lazy(() => import('../pages/ContractManage/ContractList/index'));
+const BusinessConfig = lazy(() => import('../pages/CapitalManage/BusinessConfig'));
+const Template = lazy(() => import('../pages/ContractManage/Template/index'));
 const CapitalManage = lazy(() => import('../pages/CapitalManage'));
+const CapitalList = lazy(() => import('../pages/CapitalManage/CapitalList/index'));
 const UserManage = lazy(() => import('../pages/UserManage'));
 const StaffManage = lazy(() => import('../pages/UserManage/Staff/index'));
 const DepartmentManage = lazy(() => import('../pages/UserManage/Department/index'));
@@ -36,12 +40,29 @@ const OrderDetail = lazy(() => import('../pages/OrderManage/OrderDetail/index'))
 const VehicleManage = lazy(() => import('../pages/VehicleManage/index'));
 const PriceCheck = lazy(() => import('../pages/TaskCenter/PriceCheck'));
 const PriceCheckDetail =  lazy(() => import('../pages/TaskCenter/PriceCheck/PriceCheckDetail'));
+const BlackListManage = lazy(() => import('../pages/MerchantManage/BlackList'));
+const MerchantList = lazy(() => import('../pages/MerchantManage/MerchantList'));
+const PushToInvestor = lazy(() => import('../pages/TaskCenter/PushToInvestor'));
+const WarehouseList = lazy(() => import('../pages/WareHouse/WarehouseList/index'));
+const VehicleListInStock = lazy(() => import('../pages/WareHouse/VehicleList/index'));
+const VehicleIn = lazy(() => import('../pages/WareHouse/VehicleIn/index'));
+const VehicleOut = lazy(() => import('../pages/WareHouse/VehicleOut/index')); 
+const VehicleSettlement = lazy(() => import('../pages/WareHouse/Settlement/index')); 
+const WaybillList = lazy(() => import('../pages/Waybill/WaybillList/index'));
+const BankCard = lazy(() => import('../pages/FinanceManage/BankCard/index'));
+const PaymentRequest = lazy(() => import('../pages/FinanceManage/PaymentRequest/index'));
+const Settlement = lazy(() => import('../pages/FinanceManage/Settlement/index'));
+// const Dashboard = lazy(() => import('../pages/Dashboard'));
+
 const menuRoutes: MenuRoute[] = [
   {
     path: '/',
     element: <AdminLayout />,
     children: [
-
+      // {
+      //   path: 'dashboard',
+      //   element: <Dashboard />,
+      // },
       {
         path: '/orderManage',
         name: '订单管理',
@@ -118,8 +139,8 @@ const menuRoutes: MenuRoute[] = [
           },
           {
             name: '推送到资方',
-            path: '/taskCenter/capital',
-            element: <TaskCenter />
+            path: '/taskCenter/investor',
+            element: <PushToInvestor />
           },
         ]
       },
@@ -131,27 +152,27 @@ const menuRoutes: MenuRoute[] = [
           {
             name: '仓库列表',
             path: '/warehouse/list',
-            element: <WareHouse />
+            element: <WarehouseList />
           },
           {
             name: '在库车辆',
             path: '/warehouse/inStock',
-            element: <WareHouse />
+            element: <VehicleListInStock />
           },
           {
             name: '入库管理',
             path: '/warehouse/store',
-            element: <WareHouse />
+            element: <VehicleIn />
           },
           {
             name: '出库管理',
             path: '/warehouse/outStock',
-            element: <WareHouse />
+            element: <VehicleOut />
           },
           {
             name: '仓储结算单',
             path: '/warehouse/settlement',
-            element: <WareHouse />
+            element: <VehicleSettlement />
           },
         ]
       },
@@ -163,7 +184,7 @@ const menuRoutes: MenuRoute[] = [
           {
             name: '运单列表',
             path: '/waybill/list',
-            element: <Waybill />
+            element: <WaybillList />
           },
         ]
       },
@@ -175,12 +196,12 @@ const menuRoutes: MenuRoute[] = [
           {
             name: '商家列表',
             path: '/merchant/list',
-            element: <MerchantManage />
+            element: <MerchantList />
           },
           {
             name: '黑名单管理',
-            path: '/merchant/blackUser',
-            element: <MerchantManage />
+            path: '/merchant/blacklist',
+            element: <BlackListManage />
           },
           {
             name: '签章人管理',
@@ -197,12 +218,18 @@ const menuRoutes: MenuRoute[] = [
           {
             name: '银行卡管理',
             path: '/financeManage/bankCard',
-            element: <FinanceManage />
+            element: <BankCard />
+          },
+          {
+            name: '请款单管理',
+            path: '/financeManage/payment',
+            element: <PaymentRequest />
+            
           },
           {
             name: '结算单管理',
             path: '/financeManage/balance',
-            element: <FinanceManage />
+            element: <Settlement />
           },
         ]
       },
@@ -214,12 +241,12 @@ const menuRoutes: MenuRoute[] = [
           {
             name: '模板管理',
             path: '/contract/template',
-            element: <ContractManage />
+            element: <Template />
           },
           {
             name: '合同列表',
             path: '/contract/list',
-            element: <ContractManage />
+            element: <ContractList />
           },
         ]
       },
@@ -231,12 +258,12 @@ const menuRoutes: MenuRoute[] = [
           {
             name: '资方列表',
             path: '/capitalManage/list',
-            element: <CapitalManage />
+            element: <CapitalList />
           },
           {
-            name: '法律关系',
-            path: '/capitalManage/law',
-            element: <CapitalManage />
+            name: '业务配置',
+            path: '/capitalManage/businessConfig',
+            element: <BusinessConfig />
           },
         ]
       },
@@ -247,6 +274,11 @@ const menuRoutes: MenuRoute[] = [
       },
     ],
   },
+  {
+    path: '/login',
+    name: '登录',
+    element: <Login />,
+  }
 ]
 const extractMenuItems = (menuRoutes: MenuRoute[] = []) => {
   const breadcrumbNameMap: BreadcrumbMap<MenuRoute> = {}

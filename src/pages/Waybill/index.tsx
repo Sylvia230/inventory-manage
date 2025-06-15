@@ -1,9 +1,8 @@
 import React from 'react'
+import { Outlet } from 'react-router-dom'
 
-const Waybill = () => {
-  return (
-    <div>TaskCenter</div>
-  )
+const Waybill: React.FC = () => {
+  return <Outlet />
 }
 
 export default Waybill

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Table, Button, Space, Modal, message } from 'antd';
+import { Table, Button, Space, Modal, message, Form, Input, Card, Row, Col } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import '../index.module.less'
 
 interface SignaturePerson {
   id: string;
@@ -13,8 +14,15 @@ interface SignaturePerson {
   authStatus: '已认证' | '未认证';
 }
 
+interface SearchParams {
+  name?: string;
+  idNumber?: string;
+  phone?: string;
+}
+
 const SignatureManage: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [form] = Form.useForm();
   const [dataSource, setDataSource] = useState<SignaturePerson[]>([
     {
       id: '1',
@@ -49,6 +57,26 @@ const SignatureManage: React.FC = () => {
         }
       },
     });
+  };
+
+  const handleSearch = async (values: SearchParams) => {
+    try {
+      setLoading(true);
+      // TODO: 调用搜索API
+      // const res = await searchSignaturePersons(values);
+      // setDataSource(res.data);
+      console.log('搜索条件：', values);
+    } catch (error) {
+      message.error('搜索失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    form.resetFields();
+    // TODO: 重置后重新加载数据
+    // handleSearch({});
   };
 
   const columns: ColumnsType<SignaturePerson> = [
@@ -112,6 +140,51 @@ const SignatureManage: React.FC = () => {
 
   return (
     <div style={{ padding: '24px' }}>
+      <Card  className='container' style={{ marginBottom: '24px' }}>
+        <Form
+          form={form}
+          onFinish={handleSearch}
+          layout="inline"
+        >
+          <Row gutter={24}>
+            <Col span={8}>
+              <Form.Item
+                name="name"
+                label="姓名"
+              >
+                <Input placeholder="请输入姓名" allowClear />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="idNumber"
+                label="身份证号"
+              >
+                <Input placeholder="请输入身份证号" allowClear />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="phone"
+                label="手机号"
+              >
+                <Input placeholder="请输入手机号" allowClear />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row>
+            <Col span={24} style={{ textAlign: 'right' }}>
+              <Space>
+                <Button onClick={handleReset}>重置</Button>
+                <Button type="primary" htmlType="submit" loading={loading}>
+                  查询
+                </Button>
+              </Space>
+            </Col>
+          </Row>
+        </Form>
+      </Card>
+
       <Table
         columns={columns}
         dataSource={dataSource}

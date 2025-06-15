@@ -76,9 +76,13 @@ instance.interceptors.response.use(
 		return response.data;
 	},
 	(error) => {
+		console.log('.....error', error);
+		const isRootPath = location.pathname === '/'
 		// 处理 403 状态码
 		if (error?.response?.status === 403) {
-			message.error('请选登录');
+			if(isRootPath) {
+				message.error('密码错误,请输入正确密码');
+			}
 			// 可以在这里添加重定向到登录页面的逻辑
 			window.location.href = '#/login';
 		} else if (error?.response?.status === 401) {

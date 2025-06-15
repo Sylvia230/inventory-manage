@@ -1,9 +1,7 @@
 import React from 'react'
+import { Outlet } from 'react-router-dom'
 
-const MerchantManage = () => {
-  return (
-    <div>TaskCenter</div>
-  )
+const MerchantManage:React.FC = () => {
+  return <Outlet />
 }
-
 export default MerchantManage

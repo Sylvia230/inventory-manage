@@ -436,7 +436,7 @@ const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
       >
         <Form
           form={form}
-          layout="vertical"
+          layout="inline"
         >
           <Form.Item
             label="标签"
@@ -476,7 +476,7 @@ const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
       >
         <Form
           form={businessOwnerForm}
-          layout="vertical"
+          layout="inline"
         >
           <Form.Item
             name="businessOwner"

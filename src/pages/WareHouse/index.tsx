@@ -1,9 +1,10 @@
-import React from 'react'
 
-const WareHouse = () => {
-  return (
-    <div>TaskCenter</div>
-  )
+
+import React from 'react'
+import { Outlet } from 'react-router-dom'
+
+const WareHouse: React.FC = () => {
+  return <Outlet />
 }
 
 export default WareHouse
