@@ -22,22 +22,22 @@ export async function getStaffList(params: any) {
   return axios.get<{
     data: StaffData[]
     total: number
-  }>('/gdv/staff/list', params)
+  }>('/staff/list', params)
 }
 
 // 新增员工
 export async function addStaff(data: any) {
-  return axios.post<StaffData>('/gdv/staff/add',data)
+  return axios.post<StaffData>('/staff/add',data)
 }
 
 // 编辑员工
 export async function updateStaff(data: StaffData) {
-  return axios.post<StaffData>('/api/staff/update', data)
+  return axios.post<StaffData>('/staff/update', data)
 }
 
 // 删除员工
 export async function deleteStaff(data: any) {
-  return axios.post<void>('/api/staff/delete', data)
+  return axios.post<void>('/staff/delete', data)
 }
 
 interface ResetPasswordParams {

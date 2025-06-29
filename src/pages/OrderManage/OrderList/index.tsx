@@ -66,26 +66,6 @@ const OrderList: React.FC = () => {
       await GetOrderListApi({
           "pageNo": 1,
           "pageSize": 20,
-          "id": "string",
-          "bizCategory": 0,
-          "bizCategorySub": 0,
-          "orderNo": "string",
-          "orderStatus": 0,
-          "vendorId": "string",
-          "vendorName": "string",
-          "sellerId": "string",
-          "sellerName": "string",
-          "managerId": "string",
-          "managerName": "string",
-          "capitalId": "string",
-          "capitalName": "string",
-          "contractAmount": 0,
-          "pricingAmount": 0,
-          "expectLoanAmount": 0,
-          "realLoanAmount": 0,
-          "carCount": 0,
-          "createTime": "string",
-          "modifiedTime": "string"
       })
       console.log('Search values:', values);
       // 模拟数据

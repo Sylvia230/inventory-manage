@@ -311,51 +311,56 @@ const WarehouseList: React.FC = () => {
       >
         <Form
           form={addForm}
-          layout="vertical"
+          layout="inline"
           requiredMark={false}
         >
-          <Form.Item
-            name="name"
-            label="仓库名称"
-            rules={[{ required: true, message: '请输入仓库名称' }]}
-          >
-            <Input placeholder="请输入仓库名称" />
-          </Form.Item>
+          <Col span={24}>
+            <Form.Item
+              name="name"
+              label="仓库名称"
+              rules={[{ required: true, message: '请输入仓库名称' }]}
+            >
+              <Input placeholder="请输入仓库名称" />
+            </Form.Item>
+          </Col>
+          
+          <Col span={24}>
+            <Form.Item
+              name="area"
+              label="仓库地址"
+              rules={[{ required: true, message: '请选择仓库地址' }]}
+            >
+              <Cascader
+                options={areaOptions}
+                placeholder="请选择省/市/区"
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
 
-          <Form.Item
-            name="area"
-            label="仓库地址"
-            rules={[{ required: true, message: '请选择仓库地址' }]}
-          >
-            <Cascader
-              options={areaOptions}
-              placeholder="请选择省/市/区"
-              style={{ width: '100%' }}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="address"
-            label="详细地址"
-            rules={[{ required: true, message: '请输入详细地址' }]}
-          >
-            <Input.TextArea
-              placeholder="请输入详细地址"
-              rows={3}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="type"
-            label="仓库类型"
-            rules={[{ required: true, message: '请选择仓库类型' }]}
-          >
-            <Select
-              placeholder="请选择仓库类型"
-              options={warehouseTypeOptions}
-            />
-          </Form.Item>
-
+            <Form.Item
+              name="address"
+              label="详细地址"
+              rules={[{ required: true, message: '请输入详细地址' }]}
+            >
+              <Input.TextArea
+                placeholder="请输入详细地址"
+                rows={3}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={24}>
+            <Form.Item
+              name="type"
+              label="仓库类型"
+              rules={[{ required: true, message: '请选择仓库类型' }]}
+            >
+              <Select
+                placeholder="请选择仓库类型"
+                options={warehouseTypeOptions}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={24}>
           <Form.Item
             name="status"
             label="仓库状态"
@@ -367,6 +372,7 @@ const WarehouseList: React.FC = () => {
               options={warehouseStatusOptions}
             />
           </Form.Item>
+          </Col>
         </Form>
       </Modal>
     </div>

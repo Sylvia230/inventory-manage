@@ -1,5 +1,10 @@
 import { yApiRequest as axios } from "./index";
 
 export function GetLoginInfoApi(data: any) {
-	return axios.post<unknown, any>('/gdv/auth/login', data).then(res => res);
+	return axios.post<unknown, any>('/auth/login', data).then(res => res.result);
+}
+
+// 枚举接口
+export function GetEnumApi(data: any) {
+	return axios.get<unknown, any>(`/enums/${data}`).then(res => res.result);
 }

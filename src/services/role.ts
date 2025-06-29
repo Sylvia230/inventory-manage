@@ -20,20 +20,20 @@ export interface RoleQuery {
 
 // 获取角色列表
 export function getRoleList(data: any) {
-	return axios.get<unknown, any>('/gdv/role/list', data).then(res => res.data);
+	return axios.get<unknown, any>('/role/list', data).then(res => res.data);
 }
 
 // 新增角色
 export async function addRole(data: any) {
-  return axios.post<RoleData>('/gdv/role/add', data)
+  return axios.post<RoleData>('/role/add', data)
 }
 
 // 编辑角色
 export async function updateRole(data: RoleData) {
-  return axios.post<RoleData>('/gdv/role/update', data)
+  return axios.post<RoleData>('/role/update', data)
 }
 
 // 删除角色
 export async function deleteRole(data:any) {
-  return axios.post<void>('/gdv/role/delete', data)
+  return axios.post<void>('/role/delete', data)
 } 

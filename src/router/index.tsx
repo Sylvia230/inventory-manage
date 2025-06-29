@@ -23,6 +23,8 @@ const WareHouse = lazy(() => import('../pages/WareHouse'));
 const MerchantManage = lazy(() => import('../pages/MerchantManage'));
 const SignatureManage = lazy(() => import('../pages/MerchantManage/Signature'));
 const Waybill = lazy(() => import('../pages/Waybill'));
+const WaybillList = lazy(() => import('../pages/Waybill/WaybillList/index'));
+const WaybillDetail = lazy(() => import('../pages/Waybill/WaybillDetail/index'));
 const FinanceManage = lazy(() => import('../pages/FinanceManage'));
 const ContractManage = lazy(() => import('../pages/ContractManage'));
 const ContractList = lazy(() => import('../pages/ContractManage/ContractList/index'));
@@ -40,6 +42,7 @@ const OrderDetail = lazy(() => import('../pages/OrderManage/OrderDetail/index'))
 const VehicleManage = lazy(() => import('../pages/VehicleManage/index'));
 const PriceCheck = lazy(() => import('../pages/TaskCenter/PriceCheck'));
 const PriceCheckDetail =  lazy(() => import('../pages/TaskCenter/PriceCheck/PriceCheckDetail'));
+const PreSaleLetter = lazy(() => import('../pages/PreSaleLetter'));
 const BlackListManage = lazy(() => import('../pages/MerchantManage/BlackList'));
 const MerchantList = lazy(() => import('../pages/MerchantManage/MerchantList'));
 const PushToInvestor = lazy(() => import('../pages/TaskCenter/PushToInvestor'));
@@ -48,7 +51,6 @@ const VehicleListInStock = lazy(() => import('../pages/WareHouse/VehicleList/ind
 const VehicleIn = lazy(() => import('../pages/WareHouse/VehicleIn/index'));
 const VehicleOut = lazy(() => import('../pages/WareHouse/VehicleOut/index')); 
 const VehicleSettlement = lazy(() => import('../pages/WareHouse/Settlement/index')); 
-const WaybillList = lazy(() => import('../pages/Waybill/WaybillList/index'));
 const BankCard = lazy(() => import('../pages/FinanceManage/BankCard/index'));
 const PaymentRequest = lazy(() => import('../pages/FinanceManage/PaymentRequest/index'));
 const Settlement = lazy(() => import('../pages/FinanceManage/Settlement/index'));
@@ -137,10 +139,16 @@ const menuRoutes: MenuRoute[] = [
             element: <PriceCheckDetail />,
             hideInMenu: true
           },
+        
           {
             name: '推送到资方',
             path: '/taskCenter/investor',
             element: <PushToInvestor />
+          },
+          {
+            name: '预授信',
+            path: '/taskCenter/preSaleLetter',
+            element: <PreSaleLetter />
           },
         ]
       },
@@ -169,11 +177,11 @@ const menuRoutes: MenuRoute[] = [
             path: '/warehouse/outStock',
             element: <VehicleOut />
           },
-          {
-            name: '仓储结算单',
-            path: '/warehouse/settlement',
-            element: <VehicleSettlement />
-          },
+          // {
+          //   name: '仓储结算单', //不要啦
+          //   path: '/warehouse/settlement',
+          //   element: <VehicleSettlement />
+          // },
         ]
       },
       {
@@ -185,6 +193,12 @@ const menuRoutes: MenuRoute[] = [
             name: '运单列表',
             path: '/waybill/list',
             element: <WaybillList />
+          },
+          {
+            name: '运单详情',
+            path: '/waybill/detail/:id',
+            element: <WaybillDetail />,
+            hideInMenu: true
           },
         ]
       },

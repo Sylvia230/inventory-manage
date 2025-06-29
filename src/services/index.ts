@@ -1,8 +1,8 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse } from 'axios';
 import qs from 'qs';
 import { message } from 'antd';
-import { ResponseData } from './typings';
-import { BASE_URL } from '../constants';
+import { ResponseData } from '@/services/typings';
+import { BASE_URL } from '@/constants';
 
 export interface ResponseTypeOfKDZS<T> {
     apiName?: string;
@@ -21,8 +21,8 @@ function stringify(data:any) {
 
 const instance = axios.create({
 	// baseURL: process.env.NEXT_PUBLIC_API_URL, // 使用环境变量或默认值
-	baseURL: 'http://120.26.232.36/', // 使用环境变量或默认值,
-	// baseURL: 'http://127.0.0.1:9001/api',
+	// baseURL: 'http://120.26.232.36/gdv', // 使用环境变量或默认值,
+	baseURL: 'http://127.0.0.1:9001/api',
 	headers: {
 		"Content-Type": "application/json; charset=utf-8",
 	} as AxiosRequestHeaders,
@@ -72,6 +72,12 @@ instance.interceptors.response.use(
 		if (response.headers["Content-Type"] === "multipart/form-data") {
 			return response;
 		}
+		let code = response.data?.code;
+		console.log('....code', code);
+		 // 全局报错提示
+		 if (code !== "00000") {
+            return Promise.reject(response.data);
+        }
 		
 		return response.data;
 	},
@@ -93,9 +99,10 @@ instance.interceptors.response.use(
 			message.error('请求的资源不存在');
 		} else if (error?.response?.status === 500) {
 			message.error('服务器错误');
-		} else {
-			message.error(error?.response?.data?.message || '请求失败');
-		}
+		} 
+		// else {
+		// 	message.error(error?.response?.data?.message);
+		// }
 		return Promise.reject(error?.response || error);
 	},
 );

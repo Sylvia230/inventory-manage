@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Input, Card, message, Modal, Form, InputNumber } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { SearchOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons';
 import AddVehicleModal from '../AddVehicleModal';
+import { GetVehicleListApi } from '@/services/vehicle';
 
 interface VehicleData {
   admittanceCarId: string,
@@ -54,10 +55,11 @@ const EditGuidePriceModal: React.FC<EditGuidePriceModalProps> = ({
       onOk={handleOk}
       confirmLoading={loading}
       destroyOnClose
+      width={360}
     >
       <Form
         form={form}
-        layout="vertical"
+        layout="inline"
         initialValues={initialValues}
       >
         <Form.Item
@@ -272,6 +274,15 @@ const VehicleList: React.FC = () => {
       }
   ])
   })
+
+  const getVehicleList = async () => {
+    const res = await GetVehicleListApi({});
+    console.log('..res', res)
+  }
+
+  useEffect(() => {
+    getVehicleList();
+  }, []);
   // 处理新增车型
   const handleAddVehicle = async (values: any) => {
     try {
@@ -313,11 +324,13 @@ const VehicleList: React.FC = () => {
     },
     {
       title: '车型',
+      width: 120,
       dataIndex: 'model',
       key: 'model',
     },
     {
       title: '车规',
+      width: 120,
       dataIndex: 'standardName',
       key: 'standardName',
       render: (value:any, row:any) => {
@@ -352,8 +365,10 @@ const VehicleList: React.FC = () => {
     {
       title: '操作',
       key: 'action',
+      fixed: 'right',
+      width:120,
       render: (_, record) => (
-        <Space size="middle">
+        <span>
           <Button type="link" 
             onClick={() => {
               setCurrentVehicle(record);
@@ -362,7 +377,7 @@ const VehicleList: React.FC = () => {
           <Button type="link" danger>
             {record.status === 'active' ? '禁用' : '启用'}
           </Button>
-        </Space>
+        </span>
       ),
     },
   ];

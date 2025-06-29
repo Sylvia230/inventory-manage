@@ -173,6 +173,7 @@ const PriceCheck: React.FC = () => {
     {
       title: '操作',
       key: 'action',
+      fixed: 'right',
       width: 120,
       render: (_, record) => (
         <Space size="middle">

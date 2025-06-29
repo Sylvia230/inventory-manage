@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import Unocss from 'unocss/vite'
 import { fileURLToPath } from 'url'
-import { dirname } from 'path'
+import { dirname, resolve } from 'path'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -16,7 +16,7 @@ export default defineConfig({
 	],
 	resolve: {
 		alias: {
-			'@': fileURLToPath(new URL('./src', import.meta.url))
+			'@': resolve(__dirname, 'src')
 		}
 	},
 	server: {
@@ -25,7 +25,7 @@ export default defineConfig({
 		port: 9001,
 		proxy: {
 			['/api']: {
-				target: 'http://120.26.232.36/',
+				target: 'http://120.26.232.36/gdv/',
 				changeOrigin: true,
 				secure: false,
 				rewrite: (path) => path.replace(/^\/api/, ''),

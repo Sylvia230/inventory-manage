@@ -1,0 +1,387 @@
+.container {
+  padding: 24px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+//   background: white;
+background: transparent;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  h2 {
+    margin: 0;
+    color: #1890ff;
+    font-weight: 600;
+  }
+}
+
+.card {
+//   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+//   border-radius: 8px;
+//   border: none;
+   background: transparent;
+   margin-bottom: 10px;
+
+  :global(.ant-card-head) {
+    // background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: transparent;
+    // color: white;
+   min-height: 40px;
+    border-radius: 8px 8px 0 0;
+
+    .ant-card-head-title {
+      color: white;
+      font-weight: 600;
+    }
+  }
+
+  :global(.ant-card-body) {
+    padding: 24px;
+  }
+
+  // 车辆信息卡片特殊样式
+  &:has(.ant-table-wrapper) {
+    :global(.ant-card-body) {
+      padding: 0;
+    }
+  }
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  color: #666;
+}
+
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  color: #ff4d4f;
+  font-size: 16px;
+}
+
+// 车辆表格样式
+.vehicleTable {
+  :global(.ant-table-thead > tr > th) {
+    background-color: #fafafa;
+    font-weight: 600;
+  }
+
+  :global(.ant-table-tbody > tr:hover > td) {
+    background-color: #f0f9ff;
+  }
+
+  :global(.ant-table-tbody > tr.ant-table-row-selected > td) {
+    background-color: #e6f7ff;
+  }
+}
+
+// 批量操作按钮组样式
+.batchActions {
+  margin-bottom: 16px;
+  
+  .ant-btn {
+    margin-right: 8px;
+    
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+}
+
+// 上传照片模态框样式
+.uploadModal {
+  :global(.ant-upload-drag) {
+    border: 2px dashed #d9d9d9;
+    border-radius: 8px;
+    background: #fafafa;
+    transition: all 0.3s;
+
+    &:hover {
+      border-color: #1890ff;
+      background: #f0f9ff;
+    }
+  }
+
+  :global(.ant-upload-drag-icon) {
+    color: #1890ff;
+    font-size: 48px;
+  }
+
+  :global(.ant-upload-text) {
+    color: #666;
+    font-size: 16px;
+    margin-top: 16px;
+  }
+
+  :global(.ant-upload-hint) {
+    color: #999;
+    font-size: 14px;
+  }
+} 
+
+// 响应式设计
+@media (max-width: 1200px) {
+  .container {
+    padding: 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .card {
+    :global(.ant-card-body) {
+      padding: 16px;
+    }
+  }
+
+  .batchActions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 12px 16px;
+    
+    h2 {
+      font-size: 18px;
+    }
+  }
+
+  .card {
+    :global(.ant-card-head) {
+      padding: 12px 16px;
+    }
+
+    :global(.ant-card-body) {
+      padding: 12px;
+    }
+  }
+
+  .batchActions {
+    .ant-btn {
+      width: 100%;
+      margin-bottom: 8px;
+      margin-right: 0;
+    }
+  }
+}
+
+.photoGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  justify-content: flex-start;
+}
+
+.photoItem {
+  flex: 0 0 calc(24% - 11px); // 一行3个，减去gap的影响
+  min-width: 120px;
+  max-width: calc(25% - 11px);
+  
+  // 响应式布局
+  @media (max-width: 768px) {
+    flex: 0 0 calc(50% - 8px); // 小屏幕一行2个
+    max-width: calc(50% - 8px);
+  }
+  
+  @media (max-width: 480px) {
+    flex: 0 0 100%; // 超小屏幕一行1个
+    max-width: 100%;
+  }
+  
+  :global(.ant-form-item) {
+    margin-bottom: 16px;
+    width: 100%;
+  }
+  
+  :global(.ant-form-item-label) {
+    padding-bottom: 4px;
+  }
+  
+  :global(.ant-upload-select) {
+    width: 100% !important;
+    height: 110px !important;
+    border: 2px dashed #d9d9d9;
+    border-radius: 6px;
+    background: #fafafa;
+    transition: all 0.3s;
+    
+    &:hover {
+      border-color: #1890ff;
+    }
+  }
+  
+  :global(.ant-upload-list-picture-card-container) {
+    width: 100% !important;
+  }
+  
+  :global(.ant-upload-list-picture-card .ant-upload-list-item) {
+    width: 100% !important;
+    height: 140px !important;
+  }
+  
+  :global(.ant-upload-select .anticon) {
+    font-size: 24px;
+    color: #999;
+  }
+  
+  :global(.ant-upload-select div) {
+    margin-top: 8px;
+    color: #666;
+    font-size: 14px;
+  }
+  
+  // 上传成功后的图片样式
+  :global(.ant-upload-list-picture-card .ant-upload-list-item-info) {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  :global(.ant-upload-list-picture-card .ant-upload-list-item-actions) {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+  }
+}
+
+// 已上传照片的样式
+.uploadedPhoto {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  
+  &:hover .photoActions {
+    opacity: 1;
+  }
+  
+  img {
+    transition: transform 0.3s ease;
+    
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+}
+
+.photoActions {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  
+  :global(.ant-btn) {
+    border: none;
+    box-shadow: none;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+}
+
+// 提车完成模态框样式
+.pickupModal {
+  :global(.ant-form-item-label) {
+    font-weight: 600;
+    color: #333;
+  }
+  
+  :global(.ant-picker) {
+    height: 40px;
+    border-radius: 6px;
+    
+    &:hover {
+      border-color: #1890ff;
+    }
+    
+    &:focus {
+      border-color: #1890ff;
+      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+    }
+  }
+  
+  p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+    padding: 12px 16px;
+    background: #f5f5f5;
+    border-radius: 6px;
+    border-left: 4px solid #1890ff;
+    
+         strong {
+       color: #1890ff;
+       font-size: 16px;
+     }
+   }
+ }
+
+// 确认对话框样式优化
+:global(.ant-modal-confirm) {
+  .ant-modal-confirm-title {
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .ant-modal-confirm-content {
+    margin-top: 12px;
+    
+    p {
+      margin-bottom: 8px;
+      line-height: 1.5;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+  
+  &.ant-modal-confirm-confirm {
+    .ant-modal-confirm-btns {
+      .ant-btn-dangerous {
+        background: #ff4d4f;
+        border-color: #ff4d4f;
+        
+        &:hover {
+          background: #ff7875;
+          border-color: #ff7875;
+        }
+      }
+    }
+  }
+}

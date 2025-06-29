@@ -1,5 +1,6 @@
 import React from 'react';
 import { ConfigProvider } from 'antd'
+import zhCN from 'antd/es/locale/zh_CN'
 import { createHashRouter, RouterProvider } from 'react-router-dom';
 import { routes } from './router';
 import './App.less'
@@ -11,7 +12,7 @@ const App: React.FC = () => {
     //   {/* <AppContent /> */}
     //   <RouterProvider router={createdRoutes} />
     // </HashRouter>
-     <ConfigProvider>
+     <ConfigProvider locale={zhCN}>
        <RouterProvider router={createdRoutes} />
      </ConfigProvider>
   );
