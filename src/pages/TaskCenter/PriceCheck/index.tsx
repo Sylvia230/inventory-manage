@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, Space, Tag, Modal, Form, Input, InputNumber, message, Select } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import styles from './index.module.less';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { GetTaskInfoApi } from '@/services/taskCenter';
 const { Option } = Select;
 interface PriceCheckItem {
   orderId: string;
@@ -16,6 +17,8 @@ interface PriceCheckItem {
   vehicleId: string;
   vin: string;
   status: 'pending' | 'processing' | 'completed';
+  id: string;
+  taskId: string;
 }
 
 const PriceCheck: React.FC = () => {
@@ -25,34 +28,35 @@ const PriceCheck: React.FC = () => {
   const [currentRecord, setCurrentRecord] = useState<PriceCheckItem | null>(null);
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  // 模拟数据
-  const mockData: PriceCheckItem[] = [
-    {
-      orderId: 'YH202505230922293374',
-      productName: '订单宝-银行精选',
-      createTime: 1747991317000,
-      guidePrice: 450000,
-      modelName: '奥迪A7L 2024款 45 TFSI quattro 黑武士版',
-      exterior: '黑色',
-      interior: '黑色',
-      vehicleId: 'V001',
-      vin: 'J4MB7E3FXY0B1C48X',
-      status: 'pending'
-    },
-    {
-      orderId: 'YH202505230919583236',
-      productName: '订单宝-银行精选',
-      createTime: 1747967828000,
-      guidePrice: 380000,
-      modelName: '奥迪A7L 2024款 45 TFSI 豪华型',
-      exterior: '白色',
-      interior: '棕色',
-      vehicleId: 'V002',
-      vin: 'P0W7HHW583SZPE1W4',
-      status: 'processing'
-    }
-  ];
+  // // 模拟数据
+  // const mockData: PriceCheckItem[] = [
+  //   {
+  //     orderId: 'YH202505230922293374',
+  //     productName: '订单宝-银行精选',
+  //     createTime: 1747991317000,
+  //     guidePrice: 450000,
+  //     modelName: '奥迪A7L 2024款 45 TFSI quattro 黑武士版',
+  //     exterior: '黑色',
+  //     interior: '黑色',
+  //     vehicleId: 'V001',
+  //     vin: 'J4MB7E3FXY0B1C48X',
+  //     status: 'pending'
+  //   },
+  //   {
+  //     orderId: 'YH202505230919583236',
+  //     productName: '订单宝-银行精选',
+  //     createTime: 1747967828000,
+  //     guidePrice: 380000,
+  //     modelName: '奥迪A7L 2024款 45 TFSI 豪华型',
+  //     exterior: '白色',
+  //     interior: '棕色',
+  //     vehicleId: 'V002',
+  //     vin: 'P0W7HHW583SZPE1W4',
+  //     status: 'processing'
+  //   }
+  // ];
 
 
   // 进度状态选项
@@ -81,8 +85,15 @@ const PriceCheck: React.FC = () => {
     try {
       setLoading(true);
       const values = await form.validateFields();
+      let res = await GetTaskInfoApi({
+        page: 1,
+        pageSize: 20,
+        type:1,
+        ...values
+      })
       // TODO: 调用API获取数据
-      console.log('Search values:', values);
+      console.log('Search values:', values, res);
+      setData(res || []);
       // 模拟数据
     } catch (error) {
       console.error('Search error:', error);
@@ -91,18 +102,18 @@ const PriceCheck: React.FC = () => {
     }
   };
 
-  const handleViewOrder = (orderId: string) => {
-    navigate(`/orderManage/detail/${orderId}`);
+  const handleViewOrder = (orderNo: string) => {
+    navigate(`/orderManage/detail/${orderNo}`);
   };
 
   const columns: ColumnsType<PriceCheckItem> = [
     {
       title: '订单号',
-      dataIndex: 'orderId',
-      key: 'orderId',
+      dataIndex: 'orderNo',
+      key: 'orderNo',
       width: 180,
-      render: (orderId: string) => (
-        <a onClick={() => handleViewOrder(orderId)}>{orderId}</a>
+      render: (orderNo: string) => (
+        <a onClick={() => handleViewOrder(orderNo)}>{orderNo}</a>
       ),
     },
     {
@@ -116,14 +127,14 @@ const PriceCheck: React.FC = () => {
       dataIndex: 'createTime',
       key: 'createTime',
       width: 180,
-      render: (time: number) => new Date(time).toLocaleString(),
+      // render: (time: number) => new Date(time).toLocaleString(),
     },
     {
       title: '厂商指导价',
       dataIndex: 'guidePrice',
       key: 'guidePrice',
       width: 120,
-      render: (price: number) => `¥${price.toLocaleString()}`,
+      // render: (price: number) => `¥${price.toLocaleString()}`,
     },
     {
       title: '车型',
@@ -160,14 +171,14 @@ const PriceCheck: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status: string) => {
+      render: (_, record:any) => {
         const statusMap = {
           pending: { color: 'warning', text: '待处理' },
-          processing: { color: 'processing', text: '处理中' },
+          processing: { color: '1', text: '待核价' },
           completed: { color: 'success', text: '已完成' },
         };
-        const { color, text } = statusMap[status as keyof typeof statusMap];
-        return <Tag color={color}>{text}</Tag>;
+        // const { color, text } = statusMap[status as keyof typeof statusMap];
+        return <div>{record.taskStatusDesc}</div>;
       },
     },
     {
@@ -175,16 +186,19 @@ const PriceCheck: React.FC = () => {
       key: 'action',
       fixed: 'right',
       width: 120,
-      render: (_, record) => (
+      render: (_, record:any) => (
         <Space size="middle">
-          <Button
-            type="primary"
-            size="small"
-            onClick={() => handlePriceCheck(record)}
-            disabled={record.status === 'completed'}
-          >
-            核价处理
-          </Button>
+            {
+              record.status === 1 && (
+              <Button
+              type="primary"
+              size="small"
+              onClick={() => handlePriceCheck(record)}
+              disabled={record.status === 'completed'}
+            >
+              核价处理
+            </Button>
+            )}
         </Space>
       ),
     },
@@ -198,7 +212,7 @@ const PriceCheck: React.FC = () => {
       modelName: record.modelName,
       guidePrice: record.guidePrice,
     });
-    navigate(`/taskCenter/priceCheckDetail/${record.orderId}`);
+    navigate(`/taskCenter/priceCheckDetail/${record.taskId}`);
   };
 
   const handleModalOk = async () => {
@@ -219,14 +233,23 @@ const PriceCheck: React.FC = () => {
     form.resetFields();
   };
 
-  React.useEffect(() => {
-    // 模拟加载数据
+  useEffect(() => {
+    // 检查URL参数中是否有订单号
+    const orderNumber = searchParams.get('orderNumber');
+    
+    if (orderNumber) {
+      // 自动填充订单号到表单
+      form.setFieldsValue({ orderNumber });
+      console.log('从订单页面跳转，自动填充订单号:', orderNumber);
+    }
+    
+    // 加载数据
     setLoading(true);
     setTimeout(() => {
-      setData(mockData);
+      handleSearch();
       setLoading(false);
     }, 1000);
-  }, []);
+  }, [searchParams]);
 
   const handleReset = () => {
     form.resetFields();

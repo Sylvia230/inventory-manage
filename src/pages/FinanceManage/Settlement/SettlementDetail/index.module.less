@@ -1,0 +1,66 @@
+.container {
+  padding: 24px;
+  background-color: #f5f5f5;
+  min-height: calc(100vh - 64px);
+}
+
+.header {
+  margin-bottom: 24px;
+  padding: 16px 0;
+  
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+}
+
+.card {
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  
+  :global(.ant-card-head) {
+    border-bottom: 1px solid #e8e8e8;
+    
+    :global(.ant-card-head-title) {
+      font-size: 16px;
+      font-weight: 600;
+    }
+  }
+  
+  :global(.ant-card-body) {
+    padding: 24px;
+  }
+}
+
+// 描述列表样式优化
+:global(.ant-descriptions-bordered) {
+  :global(.ant-descriptions-item-label) {
+    background-color: #fafafa;
+    font-weight: 500;
+  }
+}
+
+// 表格样式优化
+:global(.ant-table) {
+  :global(.ant-table-thead) {
+    :global(.ant-table-cell) {
+      background-color: #fafafa;
+      font-weight: 600;
+    }
+  }
+  
+  :global(.ant-table-summary) {
+    :global(.ant-table-cell) {
+      background-color: #f0f0f0;
+      font-weight: 600;
+    }
+  }
+}
+
+// 状态标签样式
+:global(.ant-tag) {
+  font-weight: 500;
+  border-radius: 4px;
+} 

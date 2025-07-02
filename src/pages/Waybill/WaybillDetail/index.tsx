@@ -76,15 +76,9 @@ const WaybillDetail: React.FC = () => {
   const [previewImage, setPreviewImage] = useState('');
   const [form] = Form.useForm();
   const [uploadedPhotos, setUploadedPhotos] = useState<{[key: string]: any}>({});
-  const [pickupModalVisible, setPickupModalVisible] = useState(false);
-  const [pickupForm] = Form.useForm();
   const [insuranceModalVisible, setInsuranceModalVisible] = useState(false);
   const [deliveryDocModalVisible, setDeliveryDocModalVisible] = useState(false);
   const [deliveryDocForm] = Form.useForm();
-  const [arrivalModalVisible, setArrivalModalVisible] = useState(false);
-  const [startTransportModalVisible, setStartTransportModalVisible] = useState(false);
-  const [arrivalForm] = Form.useForm();
-  const [startTransportForm] = Form.useForm();
   const [isDamaged, setIsDamaged] = useState<boolean>(false);
   const [damagePhotos, setDamagePhotos] = useState<any[]>([]);
   const [currentVehicleInfo, setCurrentVehicleInfo] = useState<any>(null);
@@ -263,6 +257,7 @@ const WaybillDetail: React.FC = () => {
     },
     {
       title: '内外饰',
+      dataIndex: 'outInColor',
       key: 'outInColor',
       width: 150,
     },
@@ -502,41 +497,7 @@ const WaybillDetail: React.FC = () => {
     }
   };
 
-  // 处理提车完成
-  const handleCompletePickup = async () => {
-    try {
-      const values = await pickupForm.validateFields();
-      
-      message.loading('正在处理提车完成操作...', values);
-      
-      // 模拟API调用
-      // await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // 实际API调用
-      await completePickupApi({
-        waybillNo: detailData?.waybillNo,
-        time: values.pickupCompletedTime.format('YYYY-MM-DD HH:mm:ss'),
-      });
-      
-      message.destroy();
-      message.success(`成功完成 ${selectedRowKeys.length} 辆车的提车操作`);
-      
-      setPickupModalVisible(false);
-      setSelectedRowKeys([]);
-      pickupForm.resetFields();
-      // 刷新数据
-      fetchWaybillDetail();
-      
-    } catch (error: any) {
-      message.destroy();
-      if (error?.errorFields) {
-        message.error('请填写完整信息');
-      } else {
-        message.error('提车完成操作失败');
-        console.error('提车完成操作失败:', error);
-      }
-    }
-  };
+
 
   // 查看验车照片
   const handleViewPhotos = (vehicleId: string) => {
@@ -652,80 +613,12 @@ const WaybillDetail: React.FC = () => {
     deliveryDocForm.resetFields();
   };
 
-  // 处理车辆到达
-  const handleVehicleArrival = async () => {
-    try {
-      const values = await arrivalForm.validateFields();
-      
-      message.loading('正在处理车辆到达操作...', 0);
- 
-      // 实际API调用
-      await vehicleArrivalApi({
-        waybillNo: detailData?.waybillNo,
-        time: values.arrivalTime.format('YYYY-MM-DD HH:mm:ss')
-      });
-      
-      message.destroy();
-      message.success(`成功处理 ${selectedRowKeys.length} 辆车的到达操作`);
-      
-      setArrivalModalVisible(false);
-      setSelectedRowKeys([]);
-      arrivalForm.resetFields();
-  
-      // 刷新数据
-      fetchWaybillDetail();
-      
-    } catch (error: any) {
-      message.destroy();
-      if (error?.errorFields) {
-        message.error('请填写完整信息');
-      } else {
-        message.error('车辆到达操作失败');
-        console.error('车辆到达操作失败:', error);
-      }
-    }
-  };
 
-  // 开始运输
-  const handleStartTransport = async () => {
-    try {
-      const values = await startTransportForm.validateFields();
-      console.log(values, 'values');
-       // 实际API调用
-       await vehicleArrivalApi({
-        waybillNo: detailData?.waybillNo,
-        time: values.arrivalTime.format('YYYY-MM-DD HH:mm:ss')
-      });  
-      message.destroy();
-      message.success(`成功处理 ${selectedRowKeys.length} 辆车的开始运输操作`);
-      
-      setStartTransportModalVisible(false);
-      setSelectedRowKeys([]);
-      startTransportForm.resetFields();
-      // 刷新数据
-      fetchWaybillDetail();
-    } catch (error) {
-      message.error('开始运输操作失败');
-      console.error('开始运输操作失败:', error);
-    }
-  }
-
-  // 关闭车辆到达模态框
-  const handleArrivalModalClose = () => {
-    setArrivalModalVisible(false);
-    arrivalForm.resetFields();
-  };
 
   // 批量操作
   const handleBatchOperation = async (operation: BatchOperationType) => {
     if (selectedRowKeys.length === 0) {
       message.warning('请先选择车辆');
-      return;
-    }
-
-    // 如果是完成提车操作，显示特殊弹窗
-    if (operation === 'completePickup') {
-      setPickupModalVisible(true);
       return;
     }
 
@@ -738,18 +631,6 @@ const WaybillDetail: React.FC = () => {
     // 如果是上传交车单操作，显示交车单弹窗
     if (operation === 'uploadDeliveryDoc') {
       setDeliveryDocModalVisible(true);
-      return;
-    }
-
-    // 如果是车辆到达操作，显示车辆到达弹窗
-    if (operation === 'vehicleArrival') {
-      setArrivalModalVisible(true);
-      return;
-    }
-
-    // 如果是开始运输操作，显示开始运输弹窗
-    if (operation === 'startTransport') {
-      setStartTransportModalVisible(true);
       return;
     }
 
@@ -976,6 +857,7 @@ const WaybillDetail: React.FC = () => {
           <Button 
             icon={<ArrowLeftOutlined />} 
             onClick={handleBack}
+            style={{background:'transparent'}}
           >
             返回
           </Button>
@@ -1103,27 +985,7 @@ const WaybillDetail: React.FC = () => {
                 >
                   创建保单
                 </Button>
-                <Button
-                  icon={<CheckCircleOutlined />}
-                  onClick={() => handleBatchOperation('completePickup')}
-                  disabled={selectedRowKeys.length === 0}
-                >
-                  完成提车
-                </Button>
-                <Button
-                  icon={<CheckCircleOutlined />}
-                  onClick={() => handleBatchOperation('startTransport')}
-                  disabled={selectedRowKeys.length === 0}
-                >
-                  开始运输
-                </Button>
-                <Button
-                  icon={<CarOutlined />}
-                  onClick={() => handleBatchOperation('vehicleArrival')}
-                  disabled={selectedRowKeys.length === 0}
-                >
-                  车辆到达
-                </Button>
+
                 <Button
                   icon={<DeleteOutlined />}
                   danger
@@ -1169,6 +1031,7 @@ const WaybillDetail: React.FC = () => {
         okButtonProps={{ 
           disabled: Object.keys(uploadedPhotos).length === 0 
         }}
+        className={styles.uploadModal}
       >
          <Form
         form={form}
@@ -1358,7 +1221,7 @@ const WaybillDetail: React.FC = () => {
                     <div key={photo.name} className={styles.photoItem}>
                       <Form.Item
                         name={photo.name}
-                        rules={[{ required: true, message: `请上传${photo.label}` }]}
+                        rules={[{ required: false, message: `请上传${photo.label}` }]}
                       >
                         {uploadedPhotos[photo.name] ? (
                           // 显示已上传的图片
@@ -1423,47 +1286,7 @@ const WaybillDetail: React.FC = () => {
         />
       </Modal>
 
-      {/* 提车完成模态框 */}
-      <Modal
-        title="完成提车操作"
-        open={pickupModalVisible}
-        onCancel={() => {
-          setPickupModalVisible(false);
-          pickupForm.resetFields();
-        }}
-        onOk={handleCompletePickup}
-        okText="确认完成"
-        cancelText="取消"
-        width={500}
-        className={styles.pickupModal}
-      >
-        {/* <div style={{ marginBottom: 16 }}>
-          <p>选中车辆数量：<strong>{selectedRowKeys.length}</strong> 辆</p>
-        </div> */}
-        
-        <Form
-          form={pickupForm}
-          layout="inline"
-          requiredMark={false}
-          initialValues={{
-            pickupCompletedTime: dayjs(),
-          }}
-        >
-          <Form.Item
-            name="pickupCompletedTime"
-            label="提车完成时间"
-            rules={[{ required: true, message: '请选择提车完成时间' }]}
-          >
-            <DatePicker
-              showTime
-              format="YYYY-MM-DD HH:mm:ss"
-              placeholder="请选择提车完成时间"
-              style={{ width: '100%' }}
-              defaultValue={dayjs()}
-            />
-          </Form.Item>
-          </Form>
-        </Modal>
+
 
         {/* 创建保单模态框 */}
         <InsuranceModal
@@ -1606,76 +1429,7 @@ const WaybillDetail: React.FC = () => {
           </Form>
         </Modal>
 
-        {/* 车辆到达模态框 */}
-        <Modal
-          title="车辆到达确认"
-          open={arrivalModalVisible}
-          onCancel={handleArrivalModalClose}
-          onOk={handleVehicleArrival}
-          okText="确认到达"
-          cancelText="取消"
-          width={500}
-          className={styles.arrivalModal}
-        >
-          <Form
-            form={arrivalForm}
-            layout="inline"
-            requiredMark={false}
-            initialValues={{
-              arrivalTime: dayjs(),
-            }}
-          >
-            <Form.Item
-              name="arrivalTime"
-              label="车辆到达时间"
-              rules={[{ required: true, message: '请选择车辆到达时间' }]}
-            >
-              <DatePicker
-                showTime
-                format="YYYY-MM-DD HH:mm:ss"
-                placeholder="请选择车辆到达时间"
-                style={{ width: '320px' }}
-                defaultValue={dayjs()}
-              />
-            </Form.Item>
-          </Form>
-        </Modal>
 
-
-        {/* 车辆到达模态框 */}
-        <Modal
-          title="开始运输"
-          open={startTransportModalVisible}
-          onCancel={() => setStartTransportModalVisible(false)}
-          onOk={handleStartTransport}
-          okText="确认开始"
-          cancelText="取消"
-          width={500}
-          className={styles.arrivalModal}
-        >
-          <Form
-            form={startTransportForm}
-            layout="inline"
-            requiredMark={false}
-            initialValues={{
-              arrivalTime: dayjs(),
-            }}
-          >
-            <Form.Item
-              name="arrivalTime"
-              label="车辆到达时间"
-              rules={[{ required: true, message: '请选择车辆到达时间' }]}
-            >
-              <DatePicker
-                showTime
-                format="YYYY-MM-DD HH:mm:ss"
-                placeholder="请选择车辆到达时间"
-                style={{ width: '320px' }}
-                defaultValue={dayjs()}
-              />
-            </Form.Item>
-          </Form>
-        </Modal>
         {/* 照片预览模态框 */}
         <Modal
           title={

@@ -12,6 +12,9 @@ import AccountInfo from './AccountInfo';
 
 const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  
+  console.log('订单详情页面，获取到的ID:', id);
+  
   const [orderDetail, setOrderDetail] = useState<OrderDetailInfo>({
     id: '1',
     orderNumber: 'YH202411060879036513',
@@ -212,7 +215,7 @@ const OrderDetail: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div>
       {/* <OrderTable orderData={orderDetail} /> */}
       <Card style={{ marginTop: '24px' }}>
         <Tabs items={items} />

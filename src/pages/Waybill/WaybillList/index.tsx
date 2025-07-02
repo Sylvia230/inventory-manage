@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Form, Input, Space, Row, Col, Tag, message } from 'antd';
+import { Table, Button, Form, Input, Space, Row, Col, Tag, message, Modal, DatePicker, Dropdown } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import type { MenuProps } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import styles from './index.module.less';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
-import { getWaybillList, type WaybillRecord, type WaybillQueryParams } from '@/services/waybill';
+import { SearchOutlined, ReloadOutlined, CheckCircleOutlined, CarOutlined, MoreOutlined } from '@ant-design/icons';
+import { 
+  getWaybillList, 
+  completePickupApi,
+  vehicleArrivalApi,
+  type WaybillRecord, 
+  type WaybillQueryParams 
+} from '@/services/waybill';
 import dayjs, { Dayjs } from 'dayjs';
 
 const WaybillList: React.FC = () => {
@@ -17,6 +24,17 @@ const WaybillList: React.FC = () => {
     total: 0,
   });
   const navigate = useNavigate();
+
+  // 模态框状态
+  const [pickupModalVisible, setPickupModalVisible] = useState(false);
+  const [arrivalModalVisible, setArrivalModalVisible] = useState(false);
+  const [startTransportModalVisible, setStartTransportModalVisible] = useState(false);
+  const [currentRecord, setCurrentRecord] = useState<WaybillRecord | null>(null);
+  
+  // 表单实例
+  const [pickupForm] = Form.useForm();
+  const [arrivalForm] = Form.useForm();
+  const [startTransportForm] = Form.useForm();
 
   // 获取运单列表
   const fetchWaybillList = async (params: WaybillQueryParams = {}) => {
@@ -153,12 +171,68 @@ const WaybillList: React.FC = () => {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 120,
-      render: (_, record) => (
-        <Button type="link" onClick={() => handleViewDetail(record)}>
-          查看详情
-        </Button>
-      ),
+      width: 200,
+      render: (_, record) => {
+        // 根据状态显示不同的操作按钮
+        const getActionItems = (): MenuProps['items'] => {
+          const items: MenuProps['items'] = [
+            // {
+            //   key: 'detail',
+            //   label: '查看详情',
+            //   onClick: () => handleViewDetail(record),
+            // },
+          ];
+
+          // 根据状态添加相应操作 - 使用实际的状态描述字段
+          // const statusDesc = (record as any).statusDesc;
+          
+          // if (statusDesc === '待发车' || record.status === 'pending') {
+            items.push({
+              key: 'pickup',
+              label: '完成提车',
+              icon: <CheckCircleOutlined />,
+              onClick: () => handleCompletePickup(record),
+            });
+          // }
+
+          // if (statusDesc === '已提车' || statusDesc === '运输中' || record.status === 'in_transit') {
+            items.push({
+              key: 'transport',
+              label: '开始运输',
+              icon: <CheckCircleOutlined />,
+              onClick: () => handleStartTransport(record),
+            });
+          // }
+
+          // if (statusDesc === '运输中' || record.status === 'in_transit') {
+            items.push({
+              key: 'arrival',
+              label: '车辆到达',
+              icon: <CarOutlined />,
+              onClick: () => handleVehicleArrival(record),
+            });
+          // }
+
+          return items;
+        };
+
+        return (
+          <Space>
+            <Button type="link" size='small' onClick={() => handleViewDetail(record)}>
+              查看详情
+            </Button>
+            <Dropdown
+              menu={{ items: getActionItems() }}
+              trigger={['click']}
+              placement="bottomRight"
+            >
+              <Button type="link" size='small' icon={<MoreOutlined />}>
+                更多操作
+              </Button>
+            </Dropdown>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -183,6 +257,138 @@ const WaybillList: React.FC = () => {
     console.log('查看运单详情:', record);
     // 跳转到详情页面
     navigate(`/waybill/detail/${record.id}`);
+  };
+
+  // 完成提车
+  const handleCompletePickup = (record: WaybillRecord) => {
+    setCurrentRecord(record);
+    setPickupModalVisible(true);
+  };
+
+  // 开始运输
+  const handleStartTransport = (record: WaybillRecord) => {
+    setCurrentRecord(record);
+    setStartTransportModalVisible(true);
+  };
+
+  // 车辆到达
+  const handleVehicleArrival = (record: WaybillRecord) => {
+    setCurrentRecord(record);
+    setArrivalModalVisible(true);
+  };
+
+  // 提车完成提交
+  const handlePickupSubmit = async () => {
+    try {
+      const values = await pickupForm.validateFields();
+      
+      message.loading('正在处理提车完成操作...', 0);
+      
+      await completePickupApi({
+        waybillNo: currentRecord?.waybillNo,
+        time: values.pickupCompletedTime.format('YYYY-MM-DD HH:mm:ss'),
+      });
+      
+      message.destroy();
+      message.success('提车完成操作成功');
+      
+      setPickupModalVisible(false);
+      setCurrentRecord(null);
+      pickupForm.resetFields();
+      
+      // 刷新列表
+      const values2 = form.getFieldsValue();
+      fetchWaybillList({
+        ...values2,
+        page: pagination.current,
+        pageSize: pagination.pageSize,
+      });
+      
+    } catch (error: any) {
+      message.destroy();
+      if (error?.errorFields) {
+        message.error('请填写完整信息');
+      } else {
+        message.error('提车完成操作失败');
+        console.error('提车完成操作失败:', error);
+      }
+    }
+  };
+
+  // 开始运输提交
+  const handleStartTransportSubmit = async () => {
+    try {
+      const values = await startTransportForm.validateFields();
+      
+      message.loading('正在处理开始运输操作...', 0);
+      
+      await vehicleArrivalApi({
+        waybillNo: currentRecord?.waybillNo,
+        time: values.startTime.format('YYYY-MM-DD HH:mm:ss')
+      });
+      
+      message.destroy();
+      message.success('开始运输操作成功');
+      
+      setStartTransportModalVisible(false);
+      setCurrentRecord(null);
+      startTransportForm.resetFields();
+      
+      // 刷新列表
+      const values2 = form.getFieldsValue();
+      fetchWaybillList({
+        ...values2,
+        page: pagination.current,
+        pageSize: pagination.pageSize,
+      });
+      
+    } catch (error: any) {
+      message.destroy();
+      if (error?.errorFields) {
+        message.error('请填写完整信息');
+      } else {
+        message.error('开始运输操作失败');
+        console.error('开始运输操作失败:', error);
+      }
+    }
+  };
+
+  // 车辆到达提交
+  const handleArrivalSubmit = async () => {
+    try {
+      const values = await arrivalForm.validateFields();
+      
+      message.loading('正在处理车辆到达操作...', 0);
+      
+      await vehicleArrivalApi({
+        waybillNo: currentRecord?.waybillNo,
+        time: values.arrivalTime.format('YYYY-MM-DD HH:mm:ss')
+      });
+      
+      message.destroy();
+      message.success('车辆到达操作成功');
+      
+      setArrivalModalVisible(false);
+      setCurrentRecord(null);
+      arrivalForm.resetFields();
+      
+      // 刷新列表
+      const values2 = form.getFieldsValue();
+      fetchWaybillList({
+        ...values2,
+        page: pagination.current,
+        pageSize: pagination.pageSize,
+      });
+      
+    } catch (error: any) {
+      message.destroy();
+      if (error?.errorFields) {
+        message.error('请填写完整信息');
+      } else {
+        message.error('车辆到达操作失败');
+        console.error('车辆到达操作失败:', error);
+      }
+    }
   };
 
   const handleTableChange = (pagination: any) => {
@@ -258,6 +464,129 @@ const WaybillList: React.FC = () => {
         onChange={handleTableChange}
         scroll={{ x: 1200 }}
       />
+
+      {/* 完成提车模态框 */}
+      <Modal
+        title="完成提车"
+        open={pickupModalVisible}
+        onCancel={() => {
+          setPickupModalVisible(false);
+          setCurrentRecord(null);
+          pickupForm.resetFields();
+        }}
+        onOk={handlePickupSubmit}
+        okText="确认完成"
+        cancelText="取消"
+        width={500}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <p>运单号：<strong>{currentRecord?.waybillNo}</strong></p>
+        </div>
+        
+        <Form
+          form={pickupForm}
+          layout="inline"
+          requiredMark={false}
+          initialValues={{
+            pickupCompletedTime: dayjs(),
+          }}
+        >
+          <Form.Item
+            name="pickupCompletedTime"
+            label="提车完成时间"
+            rules={[{ required: true, message: '请选择提车完成时间' }]}
+          >
+            <DatePicker
+              showTime
+              format="YYYY-MM-DD HH:mm:ss"
+              placeholder="请选择提车完成时间"
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 开始运输模态框 */}
+      <Modal
+        title="开始运输"
+        open={startTransportModalVisible}
+        onCancel={() => {
+          setStartTransportModalVisible(false);
+          setCurrentRecord(null);
+          startTransportForm.resetFields();
+        }}
+        onOk={handleStartTransportSubmit}
+        okText="确认开始"
+        cancelText="取消"
+        width={500}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <p>运单号：<strong>{currentRecord?.waybillNo}</strong></p>
+        </div>
+        
+        <Form
+          form={startTransportForm}
+          layout="inline"
+          requiredMark={false}
+          initialValues={{
+            startTime: dayjs(),
+          }}
+        >
+          <Form.Item
+            name="startTime"
+            label="开始运输时间"
+            rules={[{ required: true, message: '请选择开始运输时间' }]}
+          >
+            <DatePicker
+              showTime
+              format="YYYY-MM-DD HH:mm:ss"
+              placeholder="请选择开始运输时间"
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 车辆到达模态框 */}
+      <Modal
+        title="车辆到达确认"
+        open={arrivalModalVisible}
+        onCancel={() => {
+          setArrivalModalVisible(false);
+          setCurrentRecord(null);
+          arrivalForm.resetFields();
+        }}
+        onOk={handleArrivalSubmit}
+        okText="确认到达"
+        cancelText="取消"
+        width={500}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <p>运单号：<strong>{currentRecord?.waybillNo}</strong></p>
+        </div>
+        
+        <Form
+          form={arrivalForm}
+          layout="inline"
+          requiredMark={false}
+          initialValues={{
+            arrivalTime: dayjs(),
+          }}
+        >
+          <Form.Item
+            name="arrivalTime"
+            label="车辆到达时间"
+            rules={[{ required: true, message: '请选择车辆到达时间' }]}
+          >
+            <DatePicker
+              showTime
+              format="YYYY-MM-DD HH:mm:ss"
+              placeholder="请选择车辆到达时间"
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

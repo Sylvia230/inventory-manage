@@ -58,6 +58,7 @@
 
   .modelSection {
     margin-bottom: 32px;
+    width: 100%;
 
     .modelHeader {
       display: flex;
@@ -141,6 +142,37 @@
           color: rgba(0, 0, 0, 0.65);
         }
       }
+    }
+  }
+
+  // 隐藏Table展开图标列
+  :global(.ant-table-row-expand-icon-cell) {
+    display: none !important;
+  }
+  
+  // 或者使用更具体的选择器
+  .vehiclesList {
+    :global(.ant-table-row-expand-icon-cell) {
+      display: none !important;
+    }
+    
+    // 确保展开行跨越正确的列数（7列，因为隐藏了展开图标列）
+    :global(.ant-table-expanded-row) > td {
+      padding: 0 !important;
+      // 强制设置colSpan为7
+      width: 100% !important;
+    }
+    
+    // 直接设置展开行内容的colSpan
+    :global(.ant-table-expanded-row-fixed) {
+      width: 100% !important;
+      display: table-cell !important;
+    }
+    
+    // 如果需要更精确的控制，可以使用伪元素
+    :global(.ant-table-expanded-row td:first-child) {
+      width: 100% !important;
+      display: table-cell !important;
     }
   }
 

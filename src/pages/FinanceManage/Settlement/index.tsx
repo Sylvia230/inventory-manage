@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Table, Button, Form, Input, Select, Space, Row, Col, DatePicker, Tag, Modal, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { useNavigate } from 'react-router-dom';
 import styles from './index.module.less';
 import { SearchOutlined, ReloadOutlined, AuditOutlined, DollarOutlined, EyeOutlined } from '@ant-design/icons';
 
@@ -21,9 +22,7 @@ interface SettlementRecord {
 const Settlement: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [auditModalVisible, setAuditModalVisible] = useState(false);
-  const [priceModalVisible, setPriceModalVisible] = useState(false);
-  const [currentRecord, setCurrentRecord] = useState<SettlementRecord | null>(null);
+  const navigate = useNavigate();
 
   // 结算类型选项
   const settlementTypeOptions = [
@@ -43,8 +42,9 @@ const Settlement: React.FC = () => {
 
   // 表格列定义
   const columns: ColumnsType<SettlementRecord> = [
+    
     {
-      title: '创建时间',
+      title: '订单号',
       dataIndex: 'createTime',
       key: 'createTime',
       width: 180,
@@ -56,7 +56,14 @@ const Settlement: React.FC = () => {
       width: 180,
     },
     {
-      title: '结算类型',
+      title: '金额',
+      dataIndex: 'amount',
+      key: 'amount',
+      width: 120,
+      render: (text) => `¥${text.toFixed(2)}`,
+    },
+    {
+      title: '资金类型',
       dataIndex: 'settlementType',
       key: 'settlementType',
       width: 120,
@@ -66,30 +73,24 @@ const Settlement: React.FC = () => {
       },
     },
     {
-      title: '车架号',
+      title: '产品类型',
       dataIndex: 'vin',
       key: 'vin',
       width: 180,
     },
     {
-      title: '合作方',
+      title: '客户',
       dataIndex: 'partner',
       key: 'partner',
       width: 150,
     },
     {
-      title: '结算方',
+      title: '收款方',
       dataIndex: 'settlementParty',
       key: 'settlementParty',
       width: 150,
     },
-    {
-      title: '金额',
-      dataIndex: 'amount',
-      key: 'amount',
-      width: 120,
-      render: (text) => `¥${text.toFixed(2)}`,
-    },
+    
     {
       title: '状态',
       dataIndex: 'status',
@@ -114,9 +115,10 @@ const Settlement: React.FC = () => {
       fixed: 'right',
       width: 200,
       render: (_, record) => (
-        <Space size="middle">
+        <span>
           <Button 
             type="link" 
+            size='small'
             icon={<AuditOutlined />}
             onClick={() => handleAudit(record)}
             disabled={record.status === 'approved' || record.status === 'rejected'}
@@ -125,6 +127,7 @@ const Settlement: React.FC = () => {
           </Button>
           <Button 
             type="link" 
+            size='small'
             icon={<DollarOutlined />}
             onClick={() => handlePriceAdjust(record)}
             disabled={record.status === 'approved' || record.status === 'rejected'}
@@ -133,12 +136,13 @@ const Settlement: React.FC = () => {
           </Button>
           <Button 
             type="link" 
+            size='small'
             icon={<EyeOutlined />}
             onClick={() => handleView(record)}
           >
             查看
           </Button>
-        </Space>
+        </span>
       ),
     },
   ];
@@ -167,23 +171,35 @@ const Settlement: React.FC = () => {
       status: 'approved',
       createTime: '2024-03-15 11:00:00',
     },
+    {
+      key: '3',
+      settlementId: 'JS202403150003',
+      settlementType: 'service',
+      vin: 'LSVAM4187C2184843',
+      partner: '深圳汽车服务有限公司',
+      settlementParty: '深圳汽车金融有限公司',
+      amount: 65000.00,
+      status: 'approved',
+      createTime: '2024-03-15 12:00:00',
+    },
   ];
 
   // 审核
   const handleAudit = (record: SettlementRecord) => {
-    setCurrentRecord(record);
-    setAuditModalVisible(true);
+    console.log('跳转到审核页面，结算单信息:', record);
+    navigate(`/financeManage/settlement/audit/${record.settlementId}`);
   };
 
   // 调价
   const handlePriceAdjust = (record: SettlementRecord) => {
-    setCurrentRecord(record);
-    setPriceModalVisible(true);
+    console.log('跳转到调价页面，结算单信息:', record);
+    navigate(`/financeManage/settlement/detail/${record.settlementId}?mode=adjust`);
   };
 
   // 查看
   const handleView = (record: SettlementRecord) => {
     console.log('查看详情:', record);
+    navigate(`/financeManage/settlement/detail/${record.settlementId}`);
   };
 
   // 搜索
@@ -292,43 +308,9 @@ const Settlement: React.FC = () => {
         scroll={{ x: 1500 }}
       />
 
-      {/* 审核弹窗 */}
-      <Modal
-        title="结算单审核"
-        open={auditModalVisible}
-        onOk={() => {
-          message.success('审核成功');
-          setAuditModalVisible(false);
-        }}
-        onCancel={() => setAuditModalVisible(false)}
-        width={600}
-      >
-        <p>确定要审核该结算单吗？</p>
-        {currentRecord && (
-          <p style={{ color: '#666', fontSize: '14px' }}>
-            结算单号：{currentRecord.settlementId}
-          </p>
-        )}
-      </Modal>
 
-      {/* 调价弹窗 */}
-      <Modal
-        title="结算单调价"
-        open={priceModalVisible}
-        onOk={() => {
-          message.success('调价成功');
-          setPriceModalVisible(false);
-        }}
-        onCancel={() => setPriceModalVisible(false)}
-        width={600}
-      >
-        <p>确定要调整该结算单价格吗？</p>
-        {currentRecord && (
-          <p style={{ color: '#666', fontSize: '14px' }}>
-            结算单号：{currentRecord.settlementId}
-          </p>
-        )}
-      </Modal>
+
+
     </div>
   );
 };

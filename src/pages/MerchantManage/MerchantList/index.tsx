@@ -254,7 +254,7 @@ const MerchantList: React.FC = () => {
       ),
     },
     {
-      title: '授信额度',
+      title: '服务费日费率',
       dataIndex: 'creditLimit',
       key: 'creditLimit',
       render: (amount: number) => `¥${amount.toLocaleString()}`,
@@ -274,6 +274,9 @@ const MerchantList: React.FC = () => {
       width: '200',
       render: (_, record) => (
         <div>
+           <Button type="link" onClick={() => handleAudit(record)}>
+            修改日费率 （弹出输入日费率弹窗 （%））
+        </Button>
         <Button type="link" onClick={() => handleAudit(record)}>
             审核
         </Button>

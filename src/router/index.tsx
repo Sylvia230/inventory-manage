@@ -17,7 +17,6 @@ import { Link, Navigate, RouteObject } from 'react-router-dom'
 import AdminLayout from '../components/Layout'
 import { BreadcrumbMap, MenuItem, MenuRoute, RoutesType } from './interface'
 const Login = lazy(() => import('../pages/Login'));
-// const OrderManage = lazy(() => import('../pages/OrderManage/'));
 const TaskCenter = lazy(() => import('../pages/TaskCenter'));
 const WareHouse = lazy(() => import('../pages/WareHouse'));
 const MerchantManage = lazy(() => import('../pages/MerchantManage'));
@@ -54,6 +53,8 @@ const VehicleSettlement = lazy(() => import('../pages/WareHouse/Settlement/index
 const BankCard = lazy(() => import('../pages/FinanceManage/BankCard/index'));
 const PaymentRequest = lazy(() => import('../pages/FinanceManage/PaymentRequest/index'));
 const Settlement = lazy(() => import('../pages/FinanceManage/Settlement/index'));
+const SettlementAudit = lazy(() => import('../pages/FinanceManage/Settlement/AuditDetail/index'));
+const SettlementDetail = lazy(() => import('../pages/FinanceManage/Settlement/SettlementDetail/index'));
 // const Dashboard = lazy(() => import('../pages/Dashboard'));
 
 const menuRoutes: MenuRoute[] = [
@@ -66,22 +67,15 @@ const menuRoutes: MenuRoute[] = [
       //   element: <Dashboard />,
       // },
       {
-        path: '/orderManage',
+        path: '/orderManage/list',
         name: '订单管理',
-        element: <OrderList />,
-        children: [
-          {
-            path: '/orderManage/list',
-            name: '订单列表',
-            element: <OrderList />
-          },
-          {
-            path: '/orderManage/detail/:id',
-            name: '订单详情',
-            element: <OrderDetail />,
-            hideInMenu: true
-          }
-        ]
+        element: <OrderList />
+      },
+      {
+        path: '/orderManage/detail/:id',
+        name: '订单详情',
+        element: <OrderDetail />,
+        hideInMenu: true
       },
       {
         path: '/userManage',
@@ -213,6 +207,11 @@ const menuRoutes: MenuRoute[] = [
             element: <MerchantList />
           },
           {
+            name: '授信额度管理', // todo (列表展示：参考商家列表、产品类型、资方名称、授信额度、已用额度、状态)
+            path: '/merchant/list',
+            element: <MerchantList />
+          },
+          {
             name: '黑名单管理',
             path: '/merchant/blacklist',
             element: <BlackListManage />
@@ -244,6 +243,18 @@ const menuRoutes: MenuRoute[] = [
             name: '结算单管理',
             path: '/financeManage/balance',
             element: <Settlement />
+          },
+          {
+            name: '结算单审核',
+            path: '/financeManage/settlement/audit/:id',
+            element: <SettlementAudit />,
+            hideInMenu: true
+          },
+          {
+            name: '结算单详情',
+            path: '/financeManage/settlement/detail/:settlementId',
+            element: <SettlementDetail />,
+            hideInMenu: true
           },
         ]
       },

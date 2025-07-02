@@ -37,29 +37,29 @@ const VehicleInfo: React.FC<VehicleInfoProps> = ({ orderDetail }) => {
         return text;
       },
     },
-    {
-      title: '车辆状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 80,
-      render: (status: string, record: TableDataItem) => {
-        if ((record as ExpandRowData).isExpandRow) return { props: { colSpan: 0 } };
-        const vehicleRecord = record as VehicleData;
-        return (
-          <Tag color={
-            vehicleRecord.status === 'in_stock' ? 'green' :
-            vehicleRecord.status === 'in_transit' ? 'blue' :
-            vehicleRecord.status === 'delivered' ? 'purple' :
-            'default'
-          }>
-            {vehicleRecord.status === 'in_stock' ? '在库' :
-             vehicleRecord.status === 'in_transit' ? '运输中' :
-             vehicleRecord.status === 'delivered' ? '已交付' :
-             vehicleRecord.status}
-          </Tag>
-        );
-      },
-    },
+    // {
+    //   title: '车辆状态',
+    //   dataIndex: 'status',
+    //   key: 'status',
+    //   width: 80,
+    //   render: (status: string, record: TableDataItem) => {
+    //     if ((record as ExpandRowData).isExpandRow) return { props: { colSpan: 0 } };
+    //     const vehicleRecord = record as VehicleData;
+    //     return (
+    //       <Tag color={
+    //         vehicleRecord.status === 'in_stock' ? 'green' :
+    //         vehicleRecord.status === 'in_transit' ? 'blue' :
+    //         vehicleRecord.status === 'delivered' ? 'purple' :
+    //         'default'
+    //       }>
+    //         {vehicleRecord.status === 'in_stock' ? '在库' :
+    //          vehicleRecord.status === 'in_transit' ? '运输中' :
+    //          vehicleRecord.status === 'delivered' ? '已交付' :
+    //          vehicleRecord.status}
+    //       </Tag>
+    //     );
+    //   },
+    // },
     {
       title: '车架号',
       dataIndex: 'vin',
@@ -84,7 +84,7 @@ const VehicleInfo: React.FC<VehicleInfoProps> = ({ orderDetail }) => {
       title: '车型',
       dataIndex: 'model',
       key: 'model',
-      width: 80,
+      width: 200,
       render: (text: string, record: TableDataItem) => {
         if ((record as ExpandRowData).isExpandRow) return { props: { colSpan: 0 } };
         return (record as VehicleData).model;

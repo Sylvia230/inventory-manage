@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, Select, Button, Table, Space, Tag } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -33,7 +33,7 @@ interface OrderListItem {
 const OrderList: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<OrderListItem[]>([]);
+  const [data, setData] = useState<any>([]);
   const navigate = useNavigate();
 
   // 进度状态选项
@@ -63,19 +63,23 @@ const OrderList: React.FC = () => {
       setLoading(true);
       const values = await form.validateFields();
       // TODO: 调用API获取数据
-      await GetOrderListApi({
+      let res = await GetOrderListApi({
           "pageNo": 1,
           "pageSize": 20,
       })
-      console.log('Search values:', values);
+      console.log('Search values:', values, res);
       // 模拟数据
-      setData(orderListData);
+      setData(res.result || []);
     } catch (error) {
       console.error('Search error:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    handleSearch();
+  }, []);
 
   const handleReset = () => {
     form.resetFields();
@@ -155,7 +159,7 @@ const OrderList: React.FC = () => {
             </Space>
           </Form.Item>
         </Form>
-        <OrderTable orderData={orderListData} />
+        <OrderTable orderData={data} />
       </Card>
     </div>
   );

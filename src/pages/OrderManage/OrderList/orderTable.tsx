@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Button, Space, Tag, Modal, Input, message, Select, Spin, Form } from 'antd';
 import type { SelectProps } from 'antd/es/select';
+import { useNavigate } from 'react-router-dom';
 import debounce from 'lodash/debounce';
 import styles from './index.module.less';
 
@@ -32,6 +33,7 @@ interface OrderTableProps {
     contactsPhone: string;
     providerUserName: string;
     providerUserPhone: string;
+    [key: string]: any;
   }>;
 }
 
@@ -49,13 +51,13 @@ interface BusinessOwner {
 // 操作按钮配置
 const ACTION_BUTTONS = [
   { text: '添加备注', type: 'primary', action: 'addRemark' },
-  { text: '修改车辆信息', type: 'primary' },
+  // { text: '修改车辆信息', type: 'primary' },
   { text: '添加标签', type: 'primary', action: 'addTag' },
   { text: '业务归属', type: 'primary', action: 'setBusinessOwner' },
   { text: '推送到资方', type: 'primary', action: 'pushToProvider' },
   // { text: '退款', type: 'primary' },
-  { text: '申请还款', type: 'primary' },
-  { text: '核价', type: 'primary' },
+  // { text: '申请还款', type: 'primary' },
+  { text: '核价', type: 'primary', action: 'priceCheck' },
   { text: '后台结算', type: 'primary' },
   { text: '关闭申请单', type: 'primary', danger: true },
 ];
@@ -68,6 +70,8 @@ const VEHICLE_COLUMNS = [
 ];
 
 const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
+  console.log('orderData', orderData);
+  const navigate = useNavigate();
   const [isRemarkModalVisible, setIsRemarkModalVisible] = useState(false);
   const [isTagModalVisible, setIsTagModalVisible] = useState(false);
   const [isPushConfirmModalVisible, setIsPushConfirmModalVisible] = useState(false);
@@ -91,6 +95,16 @@ const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
             span: 18,
         },
     };
+
+  // 处理点击订单号跳转到详情页
+  const handleOrderNoClick = (orderNo: string) => {
+  // if (!applicationId) {
+  //     message.error('订单ID不存在，无法跳转到详情页');
+  //     return;
+  //   }
+    navigate(`/orderManage/detail/${orderNo}`);
+  };
+
   // 处理添加备注
   const handleAddRemark = (applicationId: string) => {
     setCurrentOrderId(applicationId);
@@ -215,6 +229,13 @@ const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
     setIsBusinessOwnerModalVisible(true);
   };
 
+  // 处理核价
+  const handlePriceCheck = (record: OrderTableProps['orderData'][0]) => {
+    console.log('跳转到核价页面，订单信息:', record);
+    // 跳转到车辆核价页面，并传递订单号进行筛选
+    navigate(`/taskCenter/priceCheck?orderNumber=${record.orderNo}`);
+  };
+
   // 确认业务归属
   const handleBusinessOwnerSubmit = async () => {
     try {
@@ -288,6 +309,9 @@ const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
         setBusinessOwner: (params: any) => {
           handleSetBusinessOwner(params);
         },
+        priceCheck: (params: any, record: any) => {
+          handlePriceCheck(record);
+        },
       };
     }, []);
     return actionMap;
@@ -295,14 +319,18 @@ const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
 
   const actionMap = useAction();
 
-  const handleBatchOpt = (applicationId: any, action: any) => {
-    action && actionMap[action]?.(applicationId);
+  const handleBatchOpt = (applicationId: any, action: any, record?: any) => {
+    if (action === 'priceCheck') {
+      actionMap[action]?.(applicationId, record);
+    } else {
+      actionMap[action]?.(applicationId);
+    }
   };
 
   // 渲染操作按钮
   const renderActionButtons = (status: string, record: OrderTableProps['orderData'][0]) => (
     <div className={styles.orderHeader}>
-      <Tag color="processing" className={styles.orderStatus}>{status}</Tag>
+      {/* <Tag color="processing" className={styles.orderStatus}>{status}</Tag> */}
       <Space wrap className={styles.actionButtons}>
         {ACTION_BUTTONS.map((btn, index) => (
           <Button
@@ -310,7 +338,7 @@ const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
             type={btn.type as any}
             size="small"
             danger={btn.danger}
-            onClick={() => handleBatchOpt(record.applicationId, btn.action)}
+            onClick={() => handleBatchOpt(record.orderNo, btn.action, record)}
           >
             {btn.text}
           </Button>
@@ -320,7 +348,7 @@ const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
   );
 
   // 渲染车辆信息表格
-  const renderVehicleTable = (vehicleData: OrderTableProps['orderData'][0]) => (
+  const renderVehicleTable = (vehicleData: any) => (
     <div className={styles.vehicleTableContainer}>
       <table className={styles.tableInner}>
         <thead>
@@ -331,11 +359,11 @@ const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
           </tr>
         </thead>
         <tbody>
-          {vehicleData.carDetail.map((vehicle, index) => (
+          {vehicleData?.carList?.map((vehicle:any, index:number) => (
             <tr key={index}>
-              <td>{vehicle.modelName}</td>
-              <td>{vehicle.uniqueNum}</td>
-              <td>{vehicle.carUniqueList.join(', ') || '-'}</td>
+              <td>{vehicle.vehicleName }</td>
+              <td>{vehicle.emission}</td>
+              <td>{vehicle?.vin || '-'}</td>
             </tr>
           ))}
         </tbody>
@@ -356,13 +384,18 @@ const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
               </tr>
               <tr>
                 <th colSpan={3} className={styles.orderInfo}>
-                  申请单号:
-                  <span className={styles.orderNumber}>{item.applicationId}</span>
-                  &nbsp;&nbsp;时间：{new Date(item.applyDate).toLocaleString()}
+                  订单号:
+                                                            <span 
+                        className={`${styles.orderNumber} ${styles.clickable}`}
+                        onClick={() => handleOrderNoClick(item.orderNo)}
+                      >
+                        {item.orderNo}
+                      </span>
+                  &nbsp;&nbsp;时间：{new Date(item.createTime).toLocaleString()}
                 </th>
                 <th colSpan={1} className={styles.taskStatus}>
                   <div>进行中的任务:</div>
-                  <Button size="small">更多</Button>
+                  {/* <Button size="small">更多</Button> */}
                 </th>
                 <th colSpan={3} className={styles.orderStatusInfo}>
                   <span>订单状态: </span>
@@ -380,13 +413,13 @@ const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
             </thead>
             <tbody>
               <tr>
-                <td colSpan={2}>经销商名称：{item.dealName}</td>
+                <td colSpan={2}>经销商名称：{item.vendorName}</td>
                 <td colSpan={2}>
                   <div className={styles.supplierInfo}>
-                    <div>供应商名称：{item.providerName}</div>
+                    <div>供应商名称：{item.sellerName}</div>
                   </div>
                 </td>
-                <td colSpan={2}>合同金额：{item.contractAmountCNY}元</td>
+                <td colSpan={2}>合同金额：{item.contractAmount}元</td>
                 <td rowSpan={2}>{renderVehicleTable(item)}</td>
               </tr>
               <tr>
@@ -395,7 +428,7 @@ const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
                 <td>手机：{item.contactsPhone}</td>
                 <td>联系人：{item.providerUserName}</td>
                 <td>手机：{item.providerUserPhone}</td>
-                <td>车辆数：{item.totalCar}</td>
+                <td>车辆数：{item.carCount}</td>
               </tr>
             </tbody>
           </table>

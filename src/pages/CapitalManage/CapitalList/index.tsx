@@ -50,6 +50,12 @@ const CapitalList: React.FC = () => {
       width: 200,
     },
     {
+      title: '费率',
+      dataIndex: 'name',
+      key: 'name',
+      width: 200,
+    },
+    {
       title: '资方类型',
       dataIndex: 'type',
       key: 'type',
