@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, Button, Form, Input, Select, Space, Row, Col, DatePicker, Tag, Modal, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useNavigate } from 'react-router-dom';
 import styles from './index.module.less';
 import { SearchOutlined, ReloadOutlined, AuditOutlined, DollarOutlined, EyeOutlined } from '@ant-design/icons';
+import { getSettlementList } from '@/services/finance';
+import financeStore from '@/stores/finance';
 
 const { RangePicker } = DatePicker;
 
 interface SettlementRecord {
   key: string;
-  settlementId: string;
+  settlementNo: string;
   settlementType: string;
   vin: string;
   partner: string;
@@ -22,6 +24,12 @@ interface SettlementRecord {
 const Settlement: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [dataSource, setDataSource] = useState<SettlementRecord[]>([]);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
   const navigate = useNavigate();
 
   // 结算类型选项
@@ -45,69 +53,55 @@ const Settlement: React.FC = () => {
     
     {
       title: '订单号',
-      dataIndex: 'createTime',
-      key: 'createTime',
+      dataIndex: 'orderNo',
+      key: 'orderNo',
       width: 180,
     },
     {
       title: '结算单号',
-      dataIndex: 'settlementId',
-      key: 'settlementId',
+      dataIndex: 'settlementNo',
+      key: 'settlementNo',
       width: 180,
     },
     {
       title: '金额',
-      dataIndex: 'amount',
-      key: 'amount',
+      dataIndex: 'amountStr',
+      key: 'amountStr',
       width: 120,
-      render: (text) => `¥${text.toFixed(2)}`,
     },
     {
       title: '资金类型',
-      dataIndex: 'settlementType',
-      key: 'settlementType',
+      dataIndex: 'fundTypeDesc',
+      key: 'fundTypeDesc',
       width: 120,
-      render: (text) => {
-        const option = settlementTypeOptions.find(opt => opt.value === text);
-        return option ? option.label : text;
-      },
     },
     {
       title: '产品类型',
-      dataIndex: 'vin',
-      key: 'vin',
+      dataIndex: 'productTypeDesc',
+      key: 'productTypeDesc',
       width: 180,
     },
     {
       title: '客户',
-      dataIndex: 'partner',
-      key: 'partner',
+      dataIndex: 'vendorName',
+      key: 'vendorName',
       width: 150,
     },
     {
       title: '收款方',
-      dataIndex: 'settlementParty',
-      key: 'settlementParty',
+      dataIndex: 'receiveBankCardInfo',
+      key: 'receiveBankCardInfo',
       width: 150,
+      render: (_,record:any) => {
+        return <div>{record.receiveBankCardInfo.accountName}</div>;
+      },
     },
     
     {
       title: '状态',
-      dataIndex: 'status',
-      key: 'status',
+      dataIndex: 'statusDesc',
+      key: 'statusDesc',
       width: 100,
-      render: (text) => {
-        const option = statusOptions.find(opt => opt.value === text);
-        const colorMap: Record<string, string> = {
-          pending: 'orange',
-          processing: 'blue',
-          approved: 'green',
-          rejected: 'red',
-        };
-        return option ? (
-          <Tag color={colorMap[text]}>{option.label}</Tag>
-        ) : text;
-      },
     },
     {
       title: '操作',
@@ -147,59 +141,88 @@ const Settlement: React.FC = () => {
     },
   ];
 
-  // 模拟数据
-  const dataSource: SettlementRecord[] = [
-    {
-      key: '1',
-      settlementId: 'JS202403150001',
-      settlementType: 'purchase',
-      vin: 'LSVAM4187C2184841',
-      partner: '上海汽车贸易有限公司',
-      settlementParty: '上海汽车金融有限公司',
-      amount: 150000.00,
-      status: 'pending',
-      createTime: '2024-03-15 10:00:00',
-    },
-    {
-      key: '2',
-      settlementId: 'JS202403150002',
-      settlementType: 'sale',
-      vin: 'LSVAM4187C2184842',
-      partner: '北京汽车贸易有限公司',
-      settlementParty: '北京汽车金融有限公司',
-      amount: 200000.00,
-      status: 'approved',
-      createTime: '2024-03-15 11:00:00',
-    },
-    {
-      key: '3',
-      settlementId: 'JS202403150003',
-      settlementType: 'service',
-      vin: 'LSVAM4187C2184843',
-      partner: '深圳汽车服务有限公司',
-      settlementParty: '深圳汽车金融有限公司',
-      amount: 65000.00,
-      status: 'approved',
-      createTime: '2024-03-15 12:00:00',
-    },
-  ];
+  // 初始化数据
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // 获取数据
+  const fetchData = async (params?: any, paginationParams?: any) => {
+    try {
+      setLoading(true);
+      const currentPagination = paginationParams || pagination;
+      const searchParams = {
+        ...params,
+        page: currentPagination.current,
+        pageSize: currentPagination.pageSize,
+      };
+      
+      // 调用API获取数据
+      const res = await getSettlementList(searchParams);
+      console.log(res, 'res');
+      if (res) {
+        financeStore.setSettlementList(res);
+        setDataSource(res);
+        setPagination(prev => ({
+          ...prev,
+          total: res.total || 0,
+        }));
+      } else {
+      
+      }
+    } catch (error) {
+      console.error('获取数据失败:', error);
+      message.error('获取数据失败，请稍后重试');
+     
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 审核
   const handleAudit = (record: SettlementRecord) => {
     console.log('跳转到审核页面，结算单信息:', record);
-    navigate(`/financeManage/settlement/audit/${record.settlementId}`);
+    
+    // 通过 id 匹配到 store 中的完整数据
+    const fullData = financeStore.getSettlementById(record.settlementNo);
+    
+    if (fullData) {
+      // 设置当前查看的结算单数据到 store
+      financeStore.setCurrentSettlement(fullData);
+      console.log('从store获取到的审核数据:', fullData);
+      
+      // 导航到审核页面
+      navigate(`/financeManage/settlement/audit/${record.settlementNo}`);
+    } else {
+      console.warn('未找到对应的结算单数据:', record.settlementNo);
+      message.warning('未找到结算单数据，无法进行审核');
+    }
   };
 
   // 调价
   const handlePriceAdjust = (record: SettlementRecord) => {
     console.log('跳转到调价页面，结算单信息:', record);
-    navigate(`/financeManage/settlement/detail/${record.settlementId}?mode=adjust`);
+    navigate(`/financeManage/settlement/detail/${record.settlementNo}?mode=adjust`);
   };
 
   // 查看
   const handleView = (record: SettlementRecord) => {
     console.log('查看详情:', record);
-    navigate(`/financeManage/settlement/detail/${record.settlementId}`);
+    
+    // 通过 id 匹配到 store 中的完整数据
+    const fullData = financeStore.getSettlementById(record.settlementNo);
+    
+    if (fullData) {
+      // 设置当前查看的结算单数据到 store
+      financeStore.setCurrentSettlement(fullData);
+      console.log('从store获取到的完整数据:', fullData);
+      
+      // 导航到详情页面
+      navigate(`/financeManage/settlement/detail/${record.settlementNo}`);
+    } else {
+      console.warn('未找到对应的结算单数据:', record.settlementNo);
+      message.warning('未找到结算单详情数据');
+    }
   };
 
   // 搜索
@@ -207,11 +230,18 @@ const Settlement: React.FC = () => {
     try {
       const values = await form.validateFields();
       console.log('搜索条件:', values);
-      setLoading(true);
-      // TODO: 实现搜索逻辑
-      setTimeout(() => {
-        setLoading(false);
-      }, 1000);
+      
+      // 重置到第一页
+      const newPagination = {
+        current: 1,
+        pageSize: pagination.pageSize,
+        total: pagination.total,
+      };
+      
+      setPagination(newPagination);
+      
+      // 获取数据
+      await fetchData(values, newPagination);
     } catch (error) {
       console.error('表单验证失败:', error);
     }
@@ -220,6 +250,28 @@ const Settlement: React.FC = () => {
   // 重置
   const handleReset = () => {
     form.resetFields();
+    const newPagination = {
+      current: 1,
+      pageSize: pagination.pageSize,
+      total: pagination.total,
+    };
+    setPagination(newPagination);
+    fetchData(undefined, newPagination);
+  };
+
+  // 处理分页变化
+  const handleTableChange = (page: number, pageSize: number) => {
+    const newPagination = {
+      current: page,
+      pageSize: pageSize,
+      total: pagination.total,
+    };
+    
+    setPagination(newPagination);
+    
+    // 获取表单数据
+    const formValues = form.getFieldsValue();
+    fetchData(formValues, newPagination);
   };
 
   return (
@@ -232,7 +284,7 @@ const Settlement: React.FC = () => {
         <Row gutter={24} style={{ width: '100%' }}>
           <Col span={6}>
             <Form.Item
-              name="settlementId"
+              name="settlementNo"
               label="结算单号"
             >
               <Input placeholder="请输入结算单号" />
@@ -299,18 +351,18 @@ const Settlement: React.FC = () => {
         dataSource={dataSource}
         loading={loading}
         pagination={{
-          total: dataSource.length,
-          pageSize: 10,
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
+          showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+          onChange: handleTableChange,
+          onShowSizeChange: handleTableChange,
+          pageSizeOptions: ['10', '20', '50', '100'],
         }}
         scroll={{ x: 1500 }}
       />
-
-
-
-
     </div>
   );
 };

@@ -4,10 +4,12 @@ import { ArrowLeftOutlined, DollarOutlined } from '@ant-design/icons';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import styles from './index.module.less';
+import financeStore from '@/stores/finance';
+import { observer } from 'mobx-react-lite';
 
 // 结算单基础信息
 interface SettlementInfo {
-  settlementId: string;
+  settlementNo: string;
   orderNo: string;
   vehicleCount: number;
   customerName?: string; // 保证金类型
@@ -55,73 +57,49 @@ interface InterestDetail {
   rate: number;
 }
 
-const SettlementDetail: React.FC = () => {
+const SettlementDetail: React.FC = observer(() => {
   const { settlementId } = useParams<{ settlementId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [settlementInfo, setSettlementInfo] = useState<SettlementInfo | null>(null);
+  const [settlementInfo, setSettlementInfo] = useState<any>(null);
   const [interestDetail, setInterestDetail] = useState<InterestDetail | null>(null);
   const [adjustForm] = Form.useForm();
   
   // 检查是否为调价模式
   const isAdjustMode = searchParams.get('mode') === 'adjust';
 
-  // 模拟获取结算单详情数据
+  // 从store获取结算单详情数据
   useEffect(() => {
     if (settlementId) {
-      // 模拟API调用
-      fetchSettlementDetail(settlementId);
+      // 优先从store获取数据
+      const storeData = financeStore.currentSettlement;
+      
+      if (storeData && (storeData.settlementNo === settlementId || storeData.id === settlementId)) {
+        setSettlementInfo(storeData);
+      } else {
+        // 如果store中没有数据，尝试通过ID查找
+        const foundData = financeStore.getSettlementById(settlementId);
+        if (foundData) {
+          financeStore.setCurrentSettlement(foundData);
+          setSettlementInfo(foundData);
+          console.log('通过ID找到数据:', foundData);
+        } else {
+          // 最后使用模拟数据
+          console.warn('store中没有找到数据，使用模拟数据');
+        }
+      }
     }
   }, [settlementId]);
 
-  const fetchSettlementDetail = (id: string) => {
-    // 模拟不同类型的数据
-    const mockData = {
-      'JS202403150001': {
-        settlementId: 'JS202403150001',
-        orderNo: 'YH202411060879036513',
-        vehicleCount: 15,
-        customerName: '上海汽车贸易有限公司',
-        type: 'deposit' as const,
-        amount: 150000.00,
-        status: 'approved',
-        createTime: '2024-03-15 10:00:00',
-      },
-      'JS202403150002': {
-        settlementId: 'JS202403150002',
-        orderNo: 'YH202411060879036514',
-        vehicleCount: 8,
-        deadline: '2024-04-15 23:59:59',
-        type: 'interest' as const,
-        amount: 200000.00,
-        status: 'pending',
-        createTime: '2024-03-15 11:00:00',
-      },
-      'JS202403150003': {
-        settlementId: 'JS202403150003',
-        orderNo: 'YH202411060879036515',
-        vehicleCount: 12,
-        deadline: '2024-05-15 23:59:59',
-        type: 'service' as const,
-        amount: 65000.00,
-        status: 'approved',
-        createTime: '2024-03-15 12:00:00',
-      },
+  // 组件卸载时清理数据
+  useEffect(() => {
+    return () => {
+      // 页面卸载时清理当前结算单数据
+      financeStore.setCurrentSettlement(null);
     };
+  }, []);
 
-    const detail = mockData[id as keyof typeof mockData] || mockData['JS202403150001'];
-    setSettlementInfo(detail);
 
-    // 如果是本息类型，设置本息明细
-    if (detail.type === 'interest') {
-      setInterestDetail({
-        startTime: '2024-01-01 00:00:00',
-        endTime: '2024-03-15 23:59:59',
-        chargeDays: 74,
-        rate: 0.0008, // 万分之8
-      });
-    }
-  };
 
   // 保证金车辆列表
   const depositVehicleData: DepositVehicle[] = [
@@ -178,13 +156,13 @@ const SettlementDetail: React.FC = () => {
   const depositColumns: ColumnsType<DepositVehicle> = [
     {
       title: '车型',
-      dataIndex: 'vehicleType',
-      key: 'vehicleType',
+      dataIndex: 'vehicleName',
+      key: 'vehicleName',
     },
     {
       title: '保证金金额',
-      dataIndex: 'depositAmount',
-      key: 'depositAmount',
+      dataIndex: 'depositAmountStr',
+      key: 'depositAmountStr',
       render: (amount: number) => `¥${amount.toLocaleString()}`,
     },
   ];
@@ -264,6 +242,8 @@ const SettlementDetail: React.FC = () => {
   ];
 
   const handleBack = () => {
+    // 清理store中的当前结算单数据
+    financeStore.setCurrentSettlement(null);
     navigate('/financeManage/balance');
   };
 
@@ -285,7 +265,9 @@ const SettlementDetail: React.FC = () => {
       // await adjustSettlementApi(adjustData);
       
       message.success('调价成功');
-      navigate('/financeManage/balance');
+      // 清理store中的当前结算单数据
+      financeStore.setCurrentSettlement(null);
+      navigate('/financeManage/settlement');
     } catch (error) {
       console.error('调价失败:', error);
       message.error('调价失败，请重试');
@@ -336,7 +318,7 @@ const SettlementDetail: React.FC = () => {
             返回
           </Button>
           <h2>
-            {isAdjustMode ? '结算单调价' : '结算单详情'} - {settlementInfo.settlementId}
+            {isAdjustMode ? '结算单调价' : '结算单详情'} - {settlementInfo.settlementNo}
           </h2>
           {/* {!isAdjustMode && (
             <Tag color={getStatusColor(settlementInfo.status)}>
@@ -355,7 +337,7 @@ const SettlementDetail: React.FC = () => {
       <Card title="基础信息" className={styles.card}>
         <Descriptions column={3} bordered>
           <Descriptions.Item label="结算单号" span={1}>
-            {settlementInfo.settlementId}
+            {settlementInfo.settlementNo}
           </Descriptions.Item>
           <Descriptions.Item label="订单号" span={1}>
             {settlementInfo.orderNo}
@@ -365,24 +347,24 @@ const SettlementDetail: React.FC = () => {
           </Descriptions.Item>
           
           {/* 保证金类型显示客户名称 */}
-          {settlementInfo.type === 'deposit' && settlementInfo.customerName && (
+          {settlementInfo.fundTypeDesc === '保证金' && settlementInfo.customerName && (
             <Descriptions.Item label="客户名称" span={1}>
-              {settlementInfo.customerName}
+              {settlementInfo.vendorName}
             </Descriptions.Item>
           )}
           
-          {/* 本息和服务费类型显示截止时间 */}
-          {(settlementInfo.type === 'interest' || settlementInfo.type === 'service') && settlementInfo.deadline && (
+          {/* 本息和  类型显示截止时间 */}
+          {(settlementInfo.fundTypeDesc === '本息' || settlementInfo.fundTypeDesc === '服务费') && settlementInfo.deadline && (
             <Descriptions.Item label="截止时间" span={1}>
-              {settlementInfo.deadline}
+              {settlementInfo.deadlineTimeStr}
             </Descriptions.Item>
           )}
           
           <Descriptions.Item label="结算类型" span={1}>
-            {getTypeText(settlementInfo.type)}
+            {settlementInfo.fundTypeDesc}
           </Descriptions.Item>
           <Descriptions.Item label="结算金额" span={1}>
-            ¥{settlementInfo.amount.toLocaleString()}
+            {settlementInfo.amountStr}
           </Descriptions.Item>
           <Descriptions.Item label="创建时间" span={1}>
             {settlementInfo.createTime}
@@ -412,23 +394,12 @@ const SettlementDetail: React.FC = () => {
 
       {/* 结算明细 - 根据类型显示不同内容 */}
       <Card title="结算明细" className={styles.card}>
-        {settlementInfo.type === 'deposit' && (
+        {settlementInfo.fundTypeDesc === '保证金' && (
           <Table
             columns={depositColumns}
-            dataSource={depositVehicleData}
+            dataSource={settlementInfo.depositCarDTOList}
             pagination={false}
-            // summary={() => (
-            //   <Table.Summary.Row>
-            //     <Table.Summary.Cell index={0}>
-            //       <strong>合计</strong>
-            //     </Table.Summary.Cell>
-            //     <Table.Summary.Cell index={1}>
-            //       <strong>
-            //         ¥{depositVehicleData.reduce((sum, item) => sum + item.depositAmount, 0).toLocaleString()}
-            //       </strong>
-            //     </Table.Summary.Cell>
-            //   </Table.Summary.Row>
-            // )}
+         
           />
         )}
 
@@ -556,6 +527,6 @@ const SettlementDetail: React.FC = () => {
        )}
      </div>
    );
- };
+ });
  
  export default SettlementDetail; 

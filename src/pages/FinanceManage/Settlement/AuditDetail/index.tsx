@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Descriptions, Table, Upload, Image, Button, Space, message, Form, Input, Modal } from 'antd';
 import { ArrowLeftOutlined, UploadOutlined, EyeOutlined } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -6,6 +6,9 @@ import type { ColumnsType } from 'antd/es/table';
 import type { UploadFile } from 'antd/es/upload/interface';
 import styles from './index.module.less';
 import { uploadFileApi } from '@/services/waybill';
+import financeStore from '@/stores/finance';
+import { observer } from 'mobx-react-lite';
+import { auditSettlementApi } from '@/services/finance';
 
 interface PaymentVoucher {
   key: string;
@@ -16,7 +19,7 @@ interface PaymentVoucher {
 }
 
 interface SettlementDetail {
-  settlementId: string;
+  settlementNo: string;
   orderNo: string;
   amount: number;
   payeeAccount: string;
@@ -24,9 +27,13 @@ interface SettlementDetail {
   payeeName: string;
   status: string;
   createTime: string;
+  amountStr?: string;
+  vendorName?: string;
+  receiveBankCardInfo?: any;
+  statusDesc?: string;
 }
 
-const AuditDetail: React.FC = () => {
+const AuditDetail: React.FC = observer(() => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [form] = Form.useForm();
@@ -39,19 +46,67 @@ const AuditDetail: React.FC = () => {
   const [currentVoucherIndex, setCurrentVoucherIndex] = useState(0);
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [rejectForm] = Form.useForm();
-  const [uploadedPhotos, setUploadedPhotos] = useState<{[key: string]: any}>({});
+  const [uploading, setUploading] = useState(false);
+  const [settlementDetail, setSettlementDetail] = useState<any | null>(null);
 
-  // 模拟详情数据
-  const settlementDetail: SettlementDetail = {
-    settlementId: id || 'JS202403150001',
-    orderNo: 'YH202411060879036513',
-    amount: 150000.00,
-    payeeAccount: '6222020300012345678',
-    payeeBranch: '中国工商银行上海分行营业部',
-    payeeName: '上海汽车金融有限公司',
-    status: 'pending',
-    createTime: '2024-03-15 10:00:00',
-  };
+  // 组件卸载时清理预览URL
+  useEffect(() => {
+    return () => {
+      // 清理所有blob URL
+      fileList.forEach(file => {
+        if (file.url && file.url.startsWith('blob:')) {
+          URL.revokeObjectURL(file.url);
+        }
+      });
+    };
+  }, [fileList]);
+
+  // 从store获取结算单数据
+  useEffect(() => {
+    if (id) {
+      // 优先从store获取数据
+      const storeData = financeStore.currentSettlement;
+      
+      if (storeData && (storeData.settlementNo === id || storeData.id === id)) {
+        console.log('审核页面从store获取数据:', storeData);
+        setSettlementDetail(storeData);
+      } else {
+        // 如果store中没有数据，尝试通过ID查找
+        const foundData = financeStore.getSettlementById(id);
+        if (foundData) {
+          financeStore.setCurrentSettlement(foundData);
+          console.log('审核页面通过ID找到数据:', foundData);
+        } else {
+          // 使用默认模拟数据
+          console.warn('审核页面store中没有找到数据，使用模拟数据');
+          const mockData: SettlementDetail = {
+            settlementNo: id || 'JS202403150001',
+            orderNo: 'YH202411060879036513',
+            amount: 150000.00,
+            payeeAccount: '6222020300012345678',
+            payeeBranch: '中国工商银行上海分行营业部',
+            payeeName: '上海汽车金融有限公司',
+            status: 'pending',
+            createTime: '2024-03-15 10:00:00',
+          };
+          setSettlementDetail(mockData);
+        }
+      }
+    }
+  }, [id]);
+
+  // 组件卸载时清理store数据
+  useEffect(() => {
+    return () => {
+      // 页面卸载时清理当前结算单数据
+      financeStore.setCurrentSettlement(null);
+    };
+  }, []);
+
+  // 监听fileList变化
+  useEffect(() => {
+    console.log('fileList变化:', fileList);
+  }, [fileList]);
 
   // 模拟用户上传凭证数据
   const paymentVoucherData: PaymentVoucher[] = [
@@ -82,46 +137,45 @@ const AuditDetail: React.FC = () => {
   const voucherColumns: ColumnsType<PaymentVoucher> = [
     {
       title: '打款金额',
-      dataIndex: 'amount',
-      key: 'amount',
+      dataIndex: 'amountStr',
+      key: 'amountStr',
       width: 120,
-      render: (amount: number) => `¥${amount.toLocaleString()}`,
     },
     {
       title: '银行账户',
-      dataIndex: 'bankAccount',
-      key: 'bankAccount',
+      dataIndex: 'payAccount',
+      key: 'payAccount',
       width: 180,
     },
     {
       title: '户名',
-      dataIndex: 'accountName',
-      key: 'accountName',
+      dataIndex: 'payAccountName',
+      key: 'payAccountName',
       width: 200,
     },
     {
       title: '打款凭证',
-      dataIndex: 'vouchers',
-      key: 'vouchers',
+      dataIndex: 'certificateImgUrlList',
+      key: 'certificateImgUrlList',
       width: 200,
-      render: (vouchers: string[], record: PaymentVoucher) => (
+      render: (certificateImgUrlList: string[], record: PaymentVoucher) => (
         <Space>
-          {vouchers.length > 0 && (
+          {certificateImgUrlList.length > 0 && (
             <Image
               width={60}
               height={60}
-              src={vouchers[0]}
+              src={certificateImgUrlList[0]}
               preview={false}
               style={{ objectFit: 'cover', cursor: 'pointer' }}
-              onClick={() => handleVoucherPreview(vouchers, 0)}
+              onClick={() => handleVoucherPreview(certificateImgUrlList, 0)}
             />
           )}
-          {vouchers.length > 1 && (
+          {certificateImgUrlList.length > 1 && (
             <Button
               size="small"
-              onClick={() => handleVoucherPreview(vouchers, 0)}
+              onClick={() => handleVoucherPreview(certificateImgUrlList, 0)}
             >
-              查看全部({vouchers.length}张)
+              查看全部({certificateImgUrlList.length}张)
             </Button>
           )}
         </Space>
@@ -136,81 +190,85 @@ const AuditDetail: React.FC = () => {
     setVoucherPreviewVisible(true);
   };
 
-  // 处理网银凭证上传
+  // 处理网银凭证上传 - 只处理删除和排序
   const handleUpload = ({ fileList: newFileList }: { fileList: UploadFile[] }) => {
+    console.log('handleUpload called with:', newFileList);
+    
+    // 检查是否有文件被删除，如果有，清理对应的预览URL
+    const removedFiles = fileList.filter(oldFile => 
+      !newFileList.some(newFile => newFile.uid === oldFile.uid)
+    );
+    
+    removedFiles.forEach(file => {
+      if (file.url && file.url.startsWith('blob:')) {
+        URL.revokeObjectURL(file.url);
+      }
+    });
+    
+    // 只更新文件列表，不触发额外的上传
     setFileList(newFileList);
   };
 
-  // 创建上传配置函数
-  const createUploadProps = () => ({
-    name: 'file',
-    multiple: false,
-    accept: 'image/*',
-    showUploadList: false, // 不显示默认的上传列表
-    beforeUpload: (file: File) => {
-      const isImage = file.type.startsWith('image/');
-      if (!isImage) {
-        message.error('只能上传图片文件!');
-        return false;
-      }
-      const isLt10M = file.size / 1024 / 1024 < 10;
-      if (!isLt10M) {
-        message.error('图片大小不能超过10MB!');
-        return false;
-      }
-      
-      // 调用实际上传函数
-      handleUploadFile(file);
-      
-      return false; // 阻止默认上传行为
-    },
-  });
-// 实际上传照片
-const handleUploadFile = async (file: File) => {
+  // 自定义上传处理
+  const customRequest = async ({ file, onSuccess, onError }: any) => {
     try {
-        message.loading(`正在上传...`, 0);
-        
-        // 模拟上传成功，实际项目中这里调用真实API
-        let res = await uploadFileApi({
-            file,
-        });
-        console.log(res, 'upload');
-        // // 模拟上传延迟
-        // await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // 创建预览URL
-        const previewUrl = URL.createObjectURL(file);
-        
-        // 更新上传状态
-        setUploadedPhotos(prev => ({
-        ...prev,
-        ['fileList']: {
-            uid: Date.now().toString(),
-            name: file.name,
-            status: 'done',
-            url: previewUrl,
-            originFileObj: file,
-            fileUrl: res.result.path,
-        }
-        }));
-        
-        // // 更新表单值
-        // form.setFieldValue(photoName, [{
-        //     uid: Date.now().toString(),
-        //     name: file.name,
-        //     status: 'done',
-        //     url: previewUrl
-        // }]);
-        
-        message.destroy();
-        message.success(`上传成功`);
-        
+      setUploading(true);
+      message.loading('正在上传...', 0);
+      
+      console.log('开始上传文件:', file.name);
+      
+      // 调用上传API
+      const res = await uploadFileApi({ file });
+      console.log('上传成功，API返回数据:', res);
+      
+      // 创建预览URL
+      const previewUrl = URL.createObjectURL(file);
+      
+      // 构造响应数据
+      const responseData = {
+        url: previewUrl,
+        name: file.name,
+        path: res.result?.path || res.result?.url || res.result,
+        ...res.result
+      };
+      
+      console.log('返回给Upload组件的数据:', responseData);
+      
+      // 调用成功回调，让Upload组件自动处理文件状态
+      onSuccess(responseData);
+      
+      message.destroy();
+      message.success('上传成功');
+      
     } catch (error) {
-        message.destroy();
-        message.error('照片上传失败');
-        console.error('照片上传失败:', error);
+      console.error('上传失败:', error);
+      message.destroy();
+      message.error('上传失败');
+      onError(error);
+    } finally {
+      setUploading(false);
     }
-};
+  };
+
+  // 上传前检查
+  const beforeUpload = (file: File) => {
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('只能上传图片文件!');
+      return false;
+    }
+    
+    const isLt10M = file.size / 1024 / 1024 < 10;
+    if (!isLt10M) {
+      message.error('图片大小不能超过10MB!');
+      return false;
+    }
+    
+    console.log('文件验证通过，准备上传:', file.name);
+    
+    // 返回true让Upload组件处理上传流程
+    return true;
+  };
 
   // 处理网银凭证预览
   const handlePreview = async (file: UploadFile) => {
@@ -237,41 +295,50 @@ const handleUploadFile = async (file: File) => {
   };
 
   // 提交审核
-  const handleSubmitAudit = async () => {
+  const handleSubmitAudit = async (examineResult: number) => {
+    if (!settlementDetail) {
+      message.error('结算单数据获取失败');
+      return;
+    }
+    
     try {
       const values = await form.validateFields();
       
       // 处理上传的网银凭证文件，转换为链接数组
       const voucherUrls: string[] = [];
       
+      console.log('提交时的fileList:', fileList);
+      
       for (const file of fileList) {
-        if (file.originFileObj) {
-          // TODO: 这里应该调用文件上传接口，获取服务器返回的URL
-          // const uploadResponse = await uploadFile(file.originFileObj);
-          // voucherUrls.push(uploadResponse.url);
-          
-          // 临时模拟：使用本地URL或base64
-          const url = file.url || await getBase64(file.originFileObj);
-          voucherUrls.push(url);
-        } else if (file.url) {
-          // 已经是URL的情况
-          voucherUrls.push(file.url);
+        if (file.status === 'done') {
+          // 优先使用服务器返回的文件路径
+          if (file.response?.path) {
+            voucherUrls.push(file.response.path);
+          } 
         }
       }
       
+      // 如果没有上传任何凭证，给出提示
+      if (voucherUrls.length === 0) {
+        message.warning('请至少上传一张收款方网银凭证');
+        return;
+      }
+      
       const auditData = {
-        settlementId: settlementDetail.settlementId, // 结算单号
-        bankVoucherUrls: voucherUrls,                // 收款方网银凭证链接数组
+        id: settlementDetail.settlementNo,
+        settlementId: settlementDetail.settlementNo, // 结算单号
+        certificateImgUrlList: voucherUrls, 
+        examineResult,
+        examineResultDesc: examineResult === 0 ? '通过' : '不通过',               // 收款方网银凭证链接数组
         remark: values.auditComment,                 // 备注
-        auditStatus: 'approved'                      // 审核状态
       };
       
       console.log('提交审核数据:', auditData);
       
       // TODO: 调用审核API
-      // await auditSettlementApi(auditData);
+      await auditSettlementApi(auditData);
       
-      message.success('审核通过成功');
+      message.success('审核成功');
       navigate('/financeManage/balance');
     } catch (error) {
       console.error('审核提交失败:', error);
@@ -305,6 +372,17 @@ const handleUploadFile = async (file: File) => {
     }
   };
 
+  // 数据加载中
+  if (!settlementDetail) {
+    return (
+      <div className={styles.container}>
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          数据加载中...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       {/* 页面头部 */}
@@ -317,7 +395,7 @@ const handleUploadFile = async (file: File) => {
           >
             返回
           </Button>
-          <h2>结算单审核详情 - {settlementDetail.settlementId}</h2>
+          <h2>结算单审核详情 - {settlementDetail.settlementNo}</h2>
         </Space>
       </div>
 
@@ -325,22 +403,22 @@ const handleUploadFile = async (file: File) => {
       <Card title="基础信息" className={styles.card}>
         <Descriptions column={3} bordered>
           <Descriptions.Item label="结算单号" span={1}>
-            {settlementDetail.settlementId}
+            {settlementDetail.settlementNo}
           </Descriptions.Item>
           <Descriptions.Item label="订单号" span={1}>
             {settlementDetail.orderNo}
           </Descriptions.Item>
           <Descriptions.Item label="结算金额" span={1}>
-            ¥{settlementDetail.amount.toLocaleString()}
+            {settlementDetail.amountStr}
           </Descriptions.Item>
           <Descriptions.Item label="收款账户" span={1}>
-            {settlementDetail.payeeAccount}
+            {settlementDetail.receiveBankCardInfo.accountName}
           </Descriptions.Item>
           <Descriptions.Item label="收款支行" span={1}>
-            {settlementDetail.payeeBranch}
+          {settlementDetail.receiveBankCardInfo.bankBranchName}
           </Descriptions.Item>
           <Descriptions.Item label="户名" span={1}>
-            {settlementDetail.payeeName}
+          {settlementDetail.receiveBankCardInfo.bankName}
           </Descriptions.Item>
           {/* <Descriptions.Item label="创建时间" span={1}>
             {settlementDetail.createTime}
@@ -355,7 +433,7 @@ const handleUploadFile = async (file: File) => {
       <Card title="用户上传凭证" className={styles.card}>
         <Table
           columns={voucherColumns}
-          dataSource={paymentVoucherData}
+          dataSource={settlementDetail.settlementRemitDTOS}
           pagination={false}
           scroll={{ x: 'max-content' }}
         />
@@ -368,18 +446,24 @@ const handleUploadFile = async (file: File) => {
           fileList={fileList}
           onPreview={handlePreview}
           onChange={handleUpload}
+          beforeUpload={beforeUpload}
+          customRequest={customRequest}
           maxCount={5}
-          {...createUploadProps()}
+          multiple={false}
+          accept="image/*"
+          disabled={uploading}
         >
           {fileList.length >= 5 ? null : (
             <div>
               <UploadOutlined />
-              <div style={{ marginTop: 8 }}>上传凭证</div>
+              <div style={{ marginTop: 8 }}>
+                {uploading ? '上传中...' : '上传凭证'}
+              </div>
             </div>
           )}
         </Upload>
         <div style={{ color: '#999', fontSize: '12px', marginTop: '8px' }}>
-          最多可上传5张图片，支持 JPG、PNG 格式
+          最多可上传5张图片，支持 JPG、PNG 格式，单个文件不超过10MB
         </div>
       </Card>
 
@@ -404,14 +488,15 @@ const handleUploadFile = async (file: File) => {
             <Space>
               <Button 
                 type="primary" 
-                onClick={handleSubmitAudit}
+                onClick={() => handleSubmitAudit(0)}
                 size="large"
               >
                 审核通过
               </Button>
               <Button 
                 danger 
-                onClick={handleRejectAudit}
+                // onClick={handleRejectAudit}
+                onClick={() => handleSubmitAudit(1)}
                 size="large"
               >
                 拒绝审核
@@ -491,6 +576,6 @@ const handleUploadFile = async (file: File) => {
       </Modal>
     </div>
   );
-};
+});
 
-export default AuditDetail; 
+export default AuditDetail;
