@@ -417,18 +417,18 @@ const SettlementDetail: React.FC = () => {
             columns={depositColumns}
             dataSource={depositVehicleData}
             pagination={false}
-            summary={() => (
-              <Table.Summary.Row>
-                <Table.Summary.Cell index={0}>
-                  <strong>合计</strong>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={1}>
-                  <strong>
-                    ¥{depositVehicleData.reduce((sum, item) => sum + item.depositAmount, 0).toLocaleString()}
-                  </strong>
-                </Table.Summary.Cell>
-              </Table.Summary.Row>
-            )}
+            // summary={() => (
+            //   <Table.Summary.Row>
+            //     <Table.Summary.Cell index={0}>
+            //       <strong>合计</strong>
+            //     </Table.Summary.Cell>
+            //     <Table.Summary.Cell index={1}>
+            //       <strong>
+            //         ¥{depositVehicleData.reduce((sum, item) => sum + item.depositAmount, 0).toLocaleString()}
+            //       </strong>
+            //     </Table.Summary.Cell>
+            //   </Table.Summary.Row>
+            // )}
           />
         )}
 
