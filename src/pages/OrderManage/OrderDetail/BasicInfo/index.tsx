@@ -4,7 +4,7 @@ import { Descriptions, Image, Space, Tag } from 'antd';
 import { OrderDetailInfo } from '../interface';
 
 interface BasicInfoProps {
-  orderDetail: OrderDetailInfo;
+  orderDetail: any;
 }
 
 const BasicInfo: React.FC<BasicInfoProps> = ({ orderDetail }) => {
@@ -21,7 +21,7 @@ const BasicInfo: React.FC<BasicInfoProps> = ({ orderDetail }) => {
     <Descriptions bordered>
       {/* 订单基本信息 */}
       <Descriptions.Item label="订单号" span={3}>
-        {orderDetail.orderNumber}
+        {orderDetail.orderNo}
       </Descriptions.Item>
       <Descriptions.Item label="产品名称" span={3}>
         {orderDetail.productName}
@@ -30,16 +30,10 @@ const BasicInfo: React.FC<BasicInfoProps> = ({ orderDetail }) => {
         {orderDetail.productType}
       </Descriptions.Item>
       <Descriptions.Item label="申请时间" span={3}>
-        {orderDetail.applyTime}
+        {orderDetail.createTime}
       </Descriptions.Item>
       <Descriptions.Item label="申请单状态" span={3}>
-        <Tag color={orderDetail.status === 'pending' ? 'orange' : 
-                    orderDetail.status === 'approved' ? 'green' : 
-                    orderDetail.status === 'rejected' ? 'red' : 'default'}>
-          {orderDetail.status === 'pending' ? '待审核' :
-           orderDetail.status === 'approved' ? '已通过' :
-           orderDetail.status === 'rejected' ? '已拒绝' : orderDetail.status}
-        </Tag>
+        {orderDetail.orderStatusDesc}
       </Descriptions.Item>
 
       {/* 经销商信息 */}

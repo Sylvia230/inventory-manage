@@ -8,3 +8,9 @@ export function GetLoginInfoApi(data: any) {
 export function GetEnumApi(data: any) {
 	return axios.get<unknown, any>(`/enums/${data}`).then(res => res.result);
 }
+
+
+// 获取Url
+export function GetUrlApi() {
+	return axios.get<unknown, any>(`/`).then(res => res.result);
+}

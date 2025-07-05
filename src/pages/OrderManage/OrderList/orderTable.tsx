@@ -4,6 +4,7 @@ import type { SelectProps } from 'antd/es/select';
 import { useNavigate } from 'react-router-dom';
 import debounce from 'lodash/debounce';
 import styles from './index.module.less';
+import orderStore from '@/stores/order';
 
 const { TextArea } = Input;
 
@@ -98,11 +99,27 @@ const OrderTable: React.FC<OrderTableProps> = ({ orderData }) => {
 
   // 处理点击订单号跳转到详情页
   const handleOrderNoClick = (orderNo: string) => {
-  // if (!applicationId) {
-  //     message.error('订单ID不存在，无法跳转到详情页');
-  //     return;
-  //   }
-    navigate(`/orderManage/detail/${orderNo}`);
+    console.log('点击订单号:', orderNo);
+    
+    // // 从 store 中获取对应的订单数据
+    // const orderData = orderStore.getOrderByNo(orderNo);
+    
+    // if (orderData) {
+    //   // 将订单数据转换为详情页面所需的格式
+    //   const orderDetail = orderStore.convertToOrderDetail(orderData);
+      
+    //   // 设置当前查看的订单数据到 store
+    //   orderStore.setCurrentOrder(orderDetail);
+      
+    //   console.log('从store获取到的订单数据:', orderData);
+    //   console.log('转换后的订单详情:', orderDetail);
+      
+      // 导航到详情页面
+      navigate(`/orderManage/detail/${orderNo}`);
+    // } else {
+    //   console.warn('未找到对应的订单数据:', orderNo);
+    //   message.warning('未找到订单数据，无法查看详情');
+    // }
   };
 
   // 处理添加备注

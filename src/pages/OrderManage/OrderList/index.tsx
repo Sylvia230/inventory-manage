@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { orderListData } from '../index.ts';
 import OrderTable from './orderTable.tsx';
 import { GetOrderListApi } from '@/services/order.ts'
+import orderStore from '@/stores/order';
 
 const { Option } = Select;
 
@@ -68,8 +69,10 @@ const OrderList: React.FC = () => {
           "pageSize": 20,
       })
       console.log('Search values:', values, res);
-      // 模拟数据
-      setData(res.result || []);
+      // 获取数据后存储到 store 中
+      const orderList = res.result || [];
+      orderStore.setOrderList(orderList);
+      setData(orderList);
     } catch (error) {
       console.error('Search error:', error);
     } finally {

@@ -29,7 +29,7 @@ export interface OrderDetailInfo {
     otherPhotos?: string[];
 
     // 车辆信息
-    vehicles?: VehicleData[];
+    carList?: VehicleData[];
 
     // 仓储信息
     storageInfo?: {

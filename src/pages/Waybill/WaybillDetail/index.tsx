@@ -67,7 +67,7 @@ const WaybillDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [detailData, setDetailData] = useState<WaybillDetailData | null>(null);
+  const [detailData, setDetailData] = useState<any>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [currentVehicleId, setCurrentVehicleId] = useState<string>('');
@@ -918,10 +918,10 @@ const WaybillDetail: React.FC = () => {
           <Card title="客户信息" className={styles.card}>
             <Descriptions column={1}>
               <Descriptions.Item label="客户名">
-                {detailData.customerName}
+                {detailData?.customerDTO?.name}
               </Descriptions.Item>
               <Descriptions.Item label="联系人">
-                {detailData.contactPerson}
+                {detailData?.customerDTO?.contactName}
               </Descriptions.Item>
               <Descriptions.Item label="联系方式">
                 {detailData.contactPhone}
@@ -935,13 +935,13 @@ const WaybillDetail: React.FC = () => {
           <Card title="发车方联系方式" className={styles.card}>
             <Descriptions column={1}>
               <Descriptions.Item label="提车联系人">
-                {detailData.pickupContact}
+                {detailData.pickupContactName}
               </Descriptions.Item>
               <Descriptions.Item label="联系方式">
-                {detailData.pickupPhone}
+                {detailData.pickupContactPhone}
               </Descriptions.Item>
               <Descriptions.Item label="提车地址">
-                {detailData.pickupAddress}
+                {detailData.senderAddress}
               </Descriptions.Item>
             </Descriptions>
           </Card>
@@ -952,13 +952,13 @@ const WaybillDetail: React.FC = () => {
           <Card title="收车方联系方式" className={styles.card}>
             <Descriptions column={1}>
               <Descriptions.Item label="库管" span={1}>
-                {detailData?.wmsWarehouseDTO?.contactName}
+                {detailData?.wmsWarehouseDTO?.keeperName}
               </Descriptions.Item>
               <Descriptions.Item label="联系方式">
-                {detailData?.wmsWarehouseDTO?.contactPhone}
+                {detailData?.wmsWarehouseDTO?.keeperPhone}
               </Descriptions.Item>
               <Descriptions.Item label="交车地址">
-                {detailData?.wmsWarehouseDTO?.provinceName}{detailData?.wmsWarehouseDTO?.cityName}{detailData?.wmsWarehouseDTO?.address}
+                {detailData?.wmsWarehouseDTO?.warehouseAddress}
               </Descriptions.Item>
             </Descriptions>
           </Card>

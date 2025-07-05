@@ -7,7 +7,7 @@ import { CaretRightOutlined } from '@ant-design/icons';
 import VehicleDetailExpansion from './VehicleDetailExpansion';
 
 interface VehicleInfoProps {
-  orderDetail: OrderDetailInfo;
+  orderDetail: any;
 }
 
 type ExpandRowData = { id: string; isExpandRow: true; vehicleId: string; };
@@ -15,6 +15,7 @@ type TableDataItem = VehicleData | ExpandRowData;
 
 const VehicleInfo: React.FC<VehicleInfoProps> = ({ orderDetail }) => {
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
+  console.log('...orderDetail', orderDetail)
 
   const columns: ColumnsType<TableDataItem> = [
     {
@@ -70,20 +71,20 @@ const VehicleInfo: React.FC<VehicleInfoProps> = ({ orderDetail }) => {
         return (record as VehicleData).vin;
       },
     },
-    {
-      title: '车规',
-      dataIndex: 'specification',
-      key: 'specification',
-      width: 80,
-      render: (text: string, record: TableDataItem) => {
-        if ((record as ExpandRowData).isExpandRow) return { props: { colSpan: 0 } };
-        return (record as VehicleData).specification;
-      },
-    },
+    // {
+    //   title: '车规',
+    //   dataIndex: 'specification',
+    //   key: 'specification',
+    //   width: 80,
+    //   render: (text: string, record: TableDataItem) => {
+    //     if ((record as ExpandRowData).isExpandRow) return { props: { colSpan: 0 } };
+    //     return (record as VehicleData).specification;
+    //   },
+    // },
     {
       title: '车型',
-      dataIndex: 'model',
-      key: 'model',
+      dataIndex: 'vehicleName',
+      key: 'vehicleName',
       width: 200,
       render: (text: string, record: TableDataItem) => {
         if ((record as ExpandRowData).isExpandRow) return { props: { colSpan: 0 } };
@@ -92,28 +93,27 @@ const VehicleInfo: React.FC<VehicleInfoProps> = ({ orderDetail }) => {
     },
     {
       title: '外观/内饰',
-      dataIndex: 'appearance',
-      key: 'appearance',
+      dataIndex: 'outerColorDesc',
+      key: 'outerColorDesc',
       width: 150,
-      render: (_, record: TableDataItem) => {
+      render: (_, record: any) => {
         if ((record as ExpandRowData).isExpandRow) return { props: { colSpan: 0 } };
-        const vehicleRecord = record as VehicleData;
         return (
           <Space direction="vertical" size="small">
-            <span>外观：{vehicleRecord.appearance}</span>
-            <span>内饰：{vehicleRecord.interior}</span>
+            <span>外观：{record.outerColorDesc}</span>
+            <span>内饰：{record.innerColorDesc}</span>
           </Space>
         );
       },
     },
     {
       title: '厂商指导价',
-      dataIndex: 'msrp',
-      key: 'msrp',
+      dataIndex: 'guidePrice',
+      key: 'guidePrice',
       width: 120,
       render: (price: number, record: TableDataItem) => {
         if ((record as ExpandRowData).isExpandRow) return { props: { colSpan: 0 } };
-        return `¥${(record as VehicleData).msrp.toLocaleString()}`;
+        return `${(record as any).guidePrice}`;
       },
     },
     {
@@ -123,17 +123,17 @@ const VehicleInfo: React.FC<VehicleInfoProps> = ({ orderDetail }) => {
       width: 120,
       render: (price: number, record: TableDataItem) => {
         if ((record as ExpandRowData).isExpandRow) return { props: { colSpan: 0 } };
-        return `¥${(record as VehicleData).appraisedPrice.toLocaleString()}`;
+        return `${(record as any).appraisedPrice}`;
       },
     },
     {
       title: '保证金',
-      dataIndex: 'deposit',
-      key: 'deposit',
+      dataIndex: 'contractAmount',
+      key: 'contractAmount',
       width: 120,
       render: (deposit: number, record: TableDataItem) => {
         if ((record as ExpandRowData).isExpandRow) return { props: { colSpan: 0 } };
-        return `¥${(record as VehicleData).deposit.toLocaleString()}`;
+        return `${(record as any).contractAmount}`;
       },
     },
     {
@@ -143,7 +143,7 @@ const VehicleInfo: React.FC<VehicleInfoProps> = ({ orderDetail }) => {
       width: 120,
       render: (rate: number, record: TableDataItem) => {
         if ((record as ExpandRowData).isExpandRow) return { props: { colSpan: 0 } };
-        return `${(record as VehicleData).depositRate}%`;
+        return `${(record as any).depositRate}%`;
       },
     },
     {
@@ -155,8 +155,8 @@ const VehicleInfo: React.FC<VehicleInfoProps> = ({ orderDetail }) => {
         const vehicleRecord = record as VehicleData;
         return (
           <Space direction="vertical" size="small">
-            <span>单价：¥{vehicleRecord.contractPrice.toLocaleString()}</span>
-            <span>定金：¥{vehicleRecord.downPayment.toLocaleString()}</span>
+            <span>单价：{vehicleRecord.contractPrice}</span>
+            <span>定金：{vehicleRecord.downPayment}</span>
           </Space>
         );
       },
@@ -166,7 +166,7 @@ const VehicleInfo: React.FC<VehicleInfoProps> = ({ orderDetail }) => {
   const expandedRowRender = (record: TableDataItem) => {
     if (!(record as ExpandRowData).isExpandRow) return null;
 
-    const actualVehicle = orderDetail.vehicles?.find(v => v.id === (record as ExpandRowData).vehicleId);
+    const actualVehicle = orderDetail.orderCarList?.find(v => v.id === (record as ExpandRowData).vehicleId);
     if (!actualVehicle) return null;
 
     return <VehicleDetailExpansion vehicle={actualVehicle} />;
@@ -174,7 +174,7 @@ const VehicleInfo: React.FC<VehicleInfoProps> = ({ orderDetail }) => {
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      {orderDetail?.vehicles?.map((vehicle: VehicleData, index: number) => (
+      {orderDetail?.orderCarList?.map((vehicle: VehicleData, index: number) => (
         <Card 
           key={vehicle.id} 
           title={`车辆 ${index + 1}`}

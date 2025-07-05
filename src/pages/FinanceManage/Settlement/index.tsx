@@ -108,14 +108,14 @@ const Settlement: React.FC = () => {
       key: 'action',
       fixed: 'right',
       width: 200,
-      render: (_, record) => (
+      render: (_, record:any) => (
         <span>
           <Button 
             type="link" 
             size='small'
             icon={<AuditOutlined />}
             onClick={() => handleAudit(record)}
-            disabled={record.status === 'approved' || record.status === 'rejected'}
+            disabled={record.status == 5 || record.status === 2}
           >
             审核
           </Button>

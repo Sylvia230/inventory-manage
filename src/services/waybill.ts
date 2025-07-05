@@ -80,8 +80,8 @@ export interface WaybillDetailData {
     carList: any[];
   }
   wmsWarehouseDTO: {
-    contactName: string;
-    contactPhone: string;
+    keeperName: string;
+    keeperPhone: string;
     provinceName: string;
     cityName: string;
     address: string;

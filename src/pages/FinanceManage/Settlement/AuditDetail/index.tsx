@@ -325,11 +325,10 @@ const AuditDetail: React.FC = observer(() => {
       }
       
       const auditData = {
-        id: settlementDetail.settlementNo,
-        settlementId: settlementDetail.settlementNo, // 结算单号
+        settlementId: settlementDetail.id, // 结算单id
         certificateImgUrlList: voucherUrls, 
         examineResult,
-        examineResultDesc: examineResult === 0 ? '通过' : '不通过',               // 收款方网银凭证链接数组
+        examineResultDesc: examineResult === 1 ? '通过' : '不通过',               // 收款方网银凭证链接数组
         remark: values.auditComment,                 // 备注
       };
       
@@ -488,7 +487,7 @@ const AuditDetail: React.FC = observer(() => {
             <Space>
               <Button 
                 type="primary" 
-                onClick={() => handleSubmitAudit(0)}
+                onClick={() => handleSubmitAudit(1)}
                 size="large"
               >
                 审核通过
@@ -496,7 +495,7 @@ const AuditDetail: React.FC = observer(() => {
               <Button 
                 danger 
                 // onClick={handleRejectAudit}
-                onClick={() => handleSubmitAudit(1)}
+                onClick={() => handleSubmitAudit(0)}
                 size="large"
               >
                 拒绝审核

@@ -45,3 +45,24 @@ export function clickPoint(params: string | number) {
 }
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * 处理图片URL，确保图片可以正确加载
+ * @param url 图片URL
+ * @returns 处理后的图片URL
+ */
+export const getImageUrl = (url: string): string => {
+  if (!url) return '';
+  
+  // 如果是完整的HTTP/HTTPS URL，直接返回
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // 如果是相对路径，确保以 / 开头
+  if (!url.startsWith('/')) {
+    return `/${url}`;
+  }
+  
+  return url;
+};
