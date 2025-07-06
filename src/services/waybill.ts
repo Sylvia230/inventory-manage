@@ -220,8 +220,6 @@ export const batchOperateVehicles = async (
 export const uploadFileApi = async (data: any): Promise<ResponseData<any>> => {
   const formData = new FormData();
   formData.append('file', data.file);
-  formData.append('currentVehicleId', data.currentVehicleId);
-  formData.append('selectedPhotoType', data.selectedPhotoType);
   return yApiRequest.post(`/file/upload`, formData, {
     'Content-Type': 'multipart/form-data'
   });

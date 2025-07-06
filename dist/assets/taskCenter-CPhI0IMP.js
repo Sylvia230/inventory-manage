@@ -1,0 +1,1 @@
+import{y as r}from"./index-Chixbmna.js";function n(e){return r.post("/task/pageQuery",e).then(t=>t.result)}function s(e){return r.get("/task/waitPricingCar",e).then(t=>t.result)}function a(e){return r.post("/task/pricing",e).then(t=>t.result)}export{n as G,a as H,s as a};

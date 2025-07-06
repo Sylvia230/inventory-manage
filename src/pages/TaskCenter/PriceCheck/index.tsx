@@ -189,12 +189,12 @@ const PriceCheck: React.FC = () => {
       render: (_, record:any) => (
         <Space size="middle">
             {
-              record.status === 1 && (
+              record.taskStatus === 1 && (
               <Button
               type="primary"
               size="small"
               onClick={() => handlePriceCheck(record)}
-              disabled={record.status === 'completed'}
+              disabled={record.taskStatus === 'completed'}
             >
               核价处理
             </Button>
