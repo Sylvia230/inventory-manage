@@ -180,23 +180,11 @@ const Settlement: React.FC = () => {
   };
 
   // 审核
-  const handleAudit = (record: SettlementRecord) => {
+  const handleAudit = (record: any) => {
     console.log('跳转到审核页面，结算单信息:', record);
     
-    // 通过 id 匹配到 store 中的完整数据
-    const fullData = financeStore.getSettlementById(record.settlementNo);
-    
-    if (fullData) {
-      // 设置当前查看的结算单数据到 store
-      financeStore.setCurrentSettlement(fullData);
-      console.log('从store获取到的审核数据:', fullData);
-      
-      // 导航到审核页面
-      navigate(`/financeManage/settlement/audit/${record.settlementNo}`);
-    } else {
-      console.warn('未找到对应的结算单数据:', record.settlementNo);
-      message.warning('未找到结算单数据，无法进行审核');
-    }
+    // 直接跳转到审核页面，页面内部会调用接口获取详情
+    navigate(`/financeManage/settlement/audit/${record.id}`);
   };
 
   // 调价

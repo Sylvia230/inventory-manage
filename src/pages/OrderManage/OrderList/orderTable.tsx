@@ -59,7 +59,7 @@ const ACTION_BUTTONS = [
   // { text: '退款', type: 'primary' },
   // { text: '申请还款', type: 'primary' },
   { text: '核价', type: 'primary', action: 'priceCheck' },
-  { text: '后台结算', type: 'primary' },
+  // { text: '后台结算', type: 'primary' },
   { text: '关闭申请单', type: 'primary', danger: true },
 ];
 

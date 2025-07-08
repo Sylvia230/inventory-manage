@@ -28,3 +28,8 @@ export const closePaymentApi = async (params: any): Promise<any> => {
 export const getVoucherImagesApi = async (paymentId: string): Promise<any> => {
     return axios.get(`/payment/voucher/${paymentId}`).then(res => res.result);
 };
+
+//结算单详情
+export const getSettlementDetailApi = async (params: any): Promise<any> =>{
+    return axios.get(`/settlement/examineDetail/`,params ).then(res => res.result);
+}

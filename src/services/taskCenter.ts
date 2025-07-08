@@ -15,3 +15,13 @@ export function GetPriceCheckVehicleApi(data: any) {
 export function HandlePriceCheckApi(data: any) {
 	return axios.post<unknown, any>('/task/pricing', data).then(res => res.result);
 }
+
+// 预授信
+export function PreCreditApi(data: any) {
+	return axios.post<unknown, any>('/task/preCredit?taskId='+data.taskId).then(res => res.result);
+}
+
+// 推送到资方
+export function PushToInvestorApi(taskId: any) {
+	return axios.get<unknown, any>('/task/pushToCapital?taskId='+taskId).then(res => res.result);
+}

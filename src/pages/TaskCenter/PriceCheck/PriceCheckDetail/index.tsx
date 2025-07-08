@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Descriptions, Tabs, Image, Form, Input, InputNumber, Button, message, Space, Row, Col, Tag, Table } from 'antd';
 import { DownOutlined, UpOutlined, EyeOutlined } from '@ant-design/icons';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { HandlePriceCheckApi } from '@/services/taskCenter';
 import styles from './index.module.less';
 import { GetPriceCheckVehicleApi } from '@/services/taskCenter';
@@ -9,6 +9,7 @@ import { GetPriceCheckVehicleApi } from '@/services/taskCenter';
 const PriceCheckDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [form] = Form.useForm();
   const [vehicleInfo, setVehicleInfo] = useState<any>([]);
   const [expandedPhotos, setExpandedPhotos] = useState<{[key: string]: boolean}>({});
@@ -16,9 +17,15 @@ const PriceCheckDetail: React.FC = () => {
   useEffect(() => {
     const fetchVehicleInfo = async () => {
       try {
+        // 使用useSearchParams获取type参数，默认为1
+        const typeParam = searchParams.get('type');
+        const apiType = typeParam ? parseInt(typeParam) : 1;
+        
+        console.log('URL查询参数 - type:', typeParam, 'apiType:', apiType);
+        
         let res = await GetPriceCheckVehicleApi({ 
           taskId: id,
-          type: 1,
+          type: apiType,
         });
         setVehicleInfo(res);
       } catch (error) {
@@ -29,7 +36,7 @@ const PriceCheckDetail: React.FC = () => {
     if (id) {
       fetchVehicleInfo();
     }
-  }, [id]);
+  }, [id, searchParams]);
 
   const togglePhotoExpansion = (vehicleId: string) => {
     setExpandedPhotos(prev => ({

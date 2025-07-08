@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { Table, Button, Space, Card, Row, Col, Form, Input, Select, Tag, Modal, message } from 'antd';
+import { Table, Button, Space, Card, Row, Col, Form, Input, Select, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import styles from '../index.module.less';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { GetTaskInfoApi, PushToInvestorApi } from '@/services/taskCenter';
 
 interface PushRecord {
   id: string;
   customerName: string;
   applicationNo: string;
   productName: string;
-  status: '待推送' | '已推送' | '推送失败';
+  status: '待推送' | '已推送';
   vehicleCount: number;
   depositStatus: '已缴纳' | '未缴纳' | '部分缴纳';
   batchNo: string;
@@ -19,60 +20,31 @@ interface PushRecord {
   createTime: string;
 }
 
-interface VehicleRecord {
-  key: string;
-  vin: string;
-  specification: string;
-  attributes: string;
-  creditStatus: string;
-  loanStatus: string;
-}
+
 
 const PushToInvestor: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
-  const [pushModalVisible, setPushModalVisible] = useState(false);
-  const [selectedVehicles, setSelectedVehicles] = useState<VehicleRecord[]>([]);
-  const [currentRecord, setCurrentRecord] = useState<PushRecord | null>(null);
 
-  const [dataSource, setDataSource] = useState<PushRecord[]>([
-    {
-      id: '1',
-      customerName: '客户A',
-      applicationNo: 'APP202403200001',
-      productName: '产品A',
-      status: '待推送',
-      vehicleCount: 5,
-      depositStatus: '已缴纳',
-      batchNo: 'BATCH202403200001',
-      approver: '张三',
-      investorName: '投资方A',
-      batchAmount: 1000000,
-      createTime: '2024-03-20 10:00:00',
-    },
-    {
-      id: '2',
-      customerName: '客户B',
-      applicationNo: 'APP202403200002',
-      productName: '产品B',
-      status: '已推送',
-      vehicleCount: 3,
-      depositStatus: '部分缴纳',
-      batchNo: 'BATCH202403200002',
-      approver: '李四',
-      investorName: '投资方B',
-      batchAmount: 2000000,
-      createTime: '2024-03-20 11:00:00',
-    },
-  ]);
+
+  const [dataSource, setDataSource] = useState<PushRecord[]>([]);
 
   const handleSearch = async (values: any) => {
     try {
       setLoading(true);
-      // TODO: 调用搜索API
-      console.log('搜索条件：', values);
+      const values = await form.validateFields();
+      let res = await GetTaskInfoApi({
+        page: 1,
+        pageSize: 20,
+        type:3,
+        ...values
+      })
+      // TODO: 调用API获取数据
+      console.log('Search values:', values, res);
+      setDataSource(res || []);
+      // 模拟数据
     } catch (error) {
-      console.error('搜索失败:', error);
+      console.error('Search error:', error);
     } finally {
       setLoading(false);
     }
@@ -88,8 +60,6 @@ const PushToInvestor: React.FC = () => {
         return 'warning';
       case '已推送':
         return 'success';
-      case '推送失败':
-        return 'error';
       default:
         return 'default';
     }
@@ -111,77 +81,77 @@ const PushToInvestor: React.FC = () => {
   const columns: ColumnsType<PushRecord> = [
     {
       title: '客户名称',
-      dataIndex: 'customerName',
-      key: 'customerName',
+      dataIndex: 'vendorName',
+      key: 'vendorName',
       width: 120,
     },
     {
-      title: '申请单号',
-      dataIndex: 'applicationNo',
-      key: 'applicationNo',
+      title: '订单号',
+      dataIndex: 'orderNo',
+      key: 'orderNo',
       width: 150,
     },
     {
-      title: '产品名称',
-      dataIndex: 'productName',
-      key: 'productName',
+      title: '产品类型',
+      dataIndex: 'bizCategorySubDesc',
+      key: 'bizCategorySubDesc',
       width: 120,
     },
     {
       title: '状态',
-      dataIndex: 'status',
-      key: 'status',
+      dataIndex: 'taskStatusDesc',
+      key: 'taskStatusDesc',
       width: 100,
       render: (status: string) => (
         <Tag color={getStatusColor(status)}>{status}</Tag>
       ),
     },
-    {
-      title: '车辆数量',
-      dataIndex: 'vehicleCount',
-      key: 'vehicleCount',
-      width: 100,
-    },
-    {
-      title: '保证金状态',
-      dataIndex: 'depositStatus',
-      key: 'depositStatus',
-      width: 100,
-      render: (status: string) => (
-        <Tag color={getDepositStatusColor(status)}>{status}</Tag>
-      ),
-    },
-    {
-      title: '批次编号',
-      dataIndex: 'batchNo',
-      key: 'batchNo',
-      width: 150,
-    },
-    {
-      title: '审批人',
-      dataIndex: 'approver',
-      key: 'approver',
-      width: 100,
-    },
+    // {
+    //   title: '车辆数量',
+    //   dataIndex: 'vehicleCount',
+    //   key: 'vehicleCount',
+    //   width: 100,
+    // },
+    // {
+    //   title: '保证金状态',
+    //   dataIndex: 'depositStatus',
+    //   key: 'depositStatus',
+    //   width: 100,
+    //   render: (status: string) => (
+    //     <Tag color={getDepositStatusColor(status)}>{status}</Tag>
+    //   ),
+    // },
+    // {
+    //   title: '批次编号',
+    //   dataIndex: 'batchNo',
+    //   key: 'batchNo',
+    //   width: 150,
+    // },
+    // {
+    //   title: '审批人',
+    //   dataIndex: 'approver',
+    //   key: 'approver',
+    //   width: 100,
+    // },
     {
       title: '资方名称',
-      dataIndex: 'investorName',
-      key: 'investorName',
+      dataIndex: 'capitalName',
+      key: 'capitalName',
       width: 120,
     },
     {
-      title: '批次金额',
-      dataIndex: 'batchAmount',
-      key: 'batchAmount',
+      title: '合同金额',
+      dataIndex: 'contractAmountStr',
+      key: 'contractAmountStr',
       width: 120,
-      render: (amount: number) => `¥${amount.toLocaleString()}`,
+      // render: (price: number) => `¥${price.toLocaleString()}`,
     },
-    {
-      title: '创建时间',
-      dataIndex: 'createTime',
-      key: 'createTime',
-      width: 160,
-    },
+    // {
+    //   title: '创建时间',
+    //   dataIndex: 'createTime',
+    //   key: 'createTime',
+    //   width: 160,
+    // },
     {
       title: '操作',
       key: 'action',
@@ -189,28 +159,51 @@ const PushToInvestor: React.FC = () => {
       width: 120,
       render: (_, record) => (
         <span>
-            <Button type="link" onClick={() => handlePush(record)}>
+            <Button 
+              type="link" 
+              onClick={() => handlePush(record)}
+              disabled={record.status === '已推送'}
+            >
               推送
             </Button>
-         
-          {/* <Button type="link" onClick={() => handleViewDetail(record)}>
-            查看
-          </Button> */}
         </span>
       ),
     },
   ];
 
-  const handlePush = (record: PushRecord) => {
-    setCurrentRecord(record);
-    setPushModalVisible(true);
-    setSelectedVehicles([]);
+  const handlePush = async (record: any) => {
+    // 检查记录是否已推送
+    if (record.status === '已推送') {
+      message.warning('该记录已经推送，无需重复推送');
+      return;
+    }
+    
+    try {
+      message.loading('正在推送...', 0);
+      
+      // 直接调用推送接口
+      await PushToInvestorApi(record.taskId);
+      
+      message.destroy();
+      message.success('推送成功');
+      
+      // 更新表格数据中的状态
+      setDataSource(prevData => 
+        prevData.map(item => 
+          item.id === record.id 
+            ? { ...item, status: '已推送' as const }
+            : item
+        )
+      );
+      
+    } catch (error) {
+      console.error('推送失败:', error);
+      message.destroy();
+      message.error('推送失败，请重试');
+    }
   };
 
-  const handleViewDetail = (record: PushRecord) => {
-    // TODO: 实现查看详情逻辑
-    console.log('查看详情:', record);
-  };
+
 
   // 进度状态选项
   const progressStatusOptions = [
@@ -232,89 +225,11 @@ const PushToInvestor: React.FC = () => {
   const taskStatusOptions = [
     { label: '待推送', value: '待推送' },
     { label: '已推送', value: '已推送' },
-    { label: '推送失败', value: '推送失败' },
   ];
 
-  // 车辆表格列定义
-  const vehicleColumns: ColumnsType<VehicleRecord> = [
-    {
-      title: '车架号',
-      dataIndex: 'vin',
-      width: 180,
-    },
-    {
-      title: '车规',
-      dataIndex: 'specification',
-      width: 120,
-    },
-    {
-      title: '车辆属性',
-      dataIndex: 'attributes',
-      width: 120,
-    },
-    {
-      title: '预授信状态',
-      dataIndex: 'creditStatus',
-      width: 120,
-      render: (status: string) => (
-        <span style={{ color: status === '已授信' ? '#52c41a' : '#ff4d4f' }}>
-          {status}
-        </span>
-      ),
-    },
-    {
-      title: '贷款申请状态',
-      dataIndex: 'loanStatus',
-      width: 120,
-      render: (status: string) => (
-        <span style={{ color: status === '已通过' ? '#52c41a' : '#ff4d4f' }}>
-          {status}
-        </span>
-      ),
-    },
-  ];
 
-  // 模拟车辆数据
-  const vehicleData: VehicleRecord[] = [
-    {
-      key: '1',
-      vin: 'LVGBE40K8GP123456',
-      specification: '标准版',
-      attributes: '新车',
-      creditStatus: '已授信',
-      loanStatus: '已通过',
-    },
-    {
-      key: '2',
-      vin: 'LVGBE40K8GP123457',
-      specification: '豪华版',
-      attributes: '二手车',
-      creditStatus: '未授信',
-      loanStatus: '审核中',
-    },
-    // ... 可以添加更多模拟数据
-  ];
 
-  const handlePushConfirm = () => {
-    if (selectedVehicles.length === 0) {
-      message.warning('请选择至少一辆车');
-      return;
-    }
-    // TODO: 调用推送接口
-    message.success('推送成功');
-    setPushModalVisible(false);
-  };
 
-  const handlePushCancel = () => {
-    setPushModalVisible(false);
-    setSelectedVehicles([]);
-  };
-
-  const rowSelection = {
-    onChange: (selectedRowKeys: React.Key[], selectedRows: VehicleRecord[]) => {
-      setSelectedVehicles(selectedRows);
-    },
-  };
 
   return (
     <div className={styles.container}>
@@ -409,26 +324,7 @@ const PushToInvestor: React.FC = () => {
         }}
       />
 
-      <Modal
-        title="选择推送车辆"
-        open={pushModalVisible}
-        onOk={handlePushConfirm}
-        onCancel={handlePushCancel}
-        width={1000}
-        okText="确认推送"
-        cancelText="取消"
-      >
-        <Table
-          columns={vehicleColumns}
-          dataSource={vehicleData}
-          rowSelection={{
-            type: 'checkbox',
-            ...rowSelection,
-          }}
-          pagination={false}
-          scroll={{ y: 400 }}
-        />
-      </Modal>
+
     </div>
   );
 };

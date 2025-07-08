@@ -1,1 +1,0 @@
-import{y as s}from"./index-Chixbmna.js";const a=async t=>s.post("/settlement/pageQuery",t).then(e=>e.result),r=async t=>s.post("/settlement/examine",t).then(e=>e.result),p=async t=>s.post("/payment/pageQuery",t).then(e=>e.result),u=async t=>s.post("/payment/uploadCert",t).then(e=>e.result),o=async t=>s.post("/payment/reject",t).then(e=>e.result);export{a,r as b,o as c,p as g,u};

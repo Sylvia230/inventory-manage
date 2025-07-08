@@ -6,9 +6,7 @@ import type { ColumnsType } from 'antd/es/table';
 import type { UploadFile } from 'antd/es/upload/interface';
 import styles from './index.module.less';
 import { uploadFileApi } from '@/services/waybill';
-import financeStore from '@/stores/finance';
-import { observer } from 'mobx-react-lite';
-import { auditSettlementApi } from '@/services/finance';
+import { auditSettlementApi, getSettlementDetailApi } from '@/services/finance';
 
 interface PaymentVoucher {
   key: string;
@@ -33,7 +31,7 @@ interface SettlementDetail {
   statusDesc?: string;
 }
 
-const AuditDetail: React.FC = observer(() => {
+const AuditDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [form] = Form.useForm();
@@ -61,47 +59,34 @@ const AuditDetail: React.FC = observer(() => {
     };
   }, [fileList]);
 
-  // 从store获取结算单数据
+  // 获取结算单详情数据
   useEffect(() => {
-    if (id) {
-      // 优先从store获取数据
-      const storeData = financeStore.currentSettlement;
-      
-      if (storeData && (storeData.settlementNo === id || storeData.id === id)) {
-        console.log('审核页面从store获取数据:', storeData);
-        setSettlementDetail(storeData);
-      } else {
-        // 如果store中没有数据，尝试通过ID查找
-        const foundData = financeStore.getSettlementById(id);
-        if (foundData) {
-          financeStore.setCurrentSettlement(foundData);
-          console.log('审核页面通过ID找到数据:', foundData);
-        } else {
-          // 使用默认模拟数据
-          console.warn('审核页面store中没有找到数据，使用模拟数据');
-          const mockData: SettlementDetail = {
-            settlementNo: id || 'JS202403150001',
-            orderNo: 'YH202411060879036513',
-            amount: 150000.00,
-            payeeAccount: '6222020300012345678',
-            payeeBranch: '中国工商银行上海分行营业部',
-            payeeName: '上海汽车金融有限公司',
-            status: 'pending',
-            createTime: '2024-03-15 10:00:00',
-          };
-          setSettlementDetail(mockData);
+    const fetchSettlementDetail = async () => {
+      console.log('id',id);
+      if (id) {
+        try {
+          console.log('审核页面调用接口获取详情，ID:', id);
+          const res = await getSettlementDetailApi({
+            settlementId: id
+          });
+          console.log('接口返回数据:', res);
+          
+          if (res) {
+            setSettlementDetail(res);
+          } else {
+            message.error('获取结算单详情失败');
+          }
+        } catch (error) {
+          console.error('获取结算单详情失败:', error);
+          message.error('获取结算单详情失败，请稍后重试');
         }
       }
-    }
+    };
+    
+    fetchSettlementDetail();
   }, [id]);
 
-  // 组件卸载时清理store数据
-  useEffect(() => {
-    return () => {
-      // 页面卸载时清理当前结算单数据
-      financeStore.setCurrentSettlement(null);
-    };
-  }, []);
+
 
   // 监听fileList变化
   useEffect(() => {
@@ -164,7 +149,7 @@ const AuditDetail: React.FC = observer(() => {
             <Image
               width={60}
               height={60}
-              src={certificateImgUrlList[0]}
+              src={'http://120.26.232.36/'+certificateImgUrlList[0]}
               preview={false}
               style={{ objectFit: 'cover', cursor: 'pointer' }}
               onClick={() => handleVoucherPreview(certificateImgUrlList, 0)}
@@ -325,7 +310,7 @@ const AuditDetail: React.FC = observer(() => {
       }
       
       const auditData = {
-        settlementId: settlementDetail.id, // 结算单id
+        settlementId: settlementDetail?.settlementDTO.id, // 结算单id
         certificateImgUrlList: voucherUrls, 
         examineResult,
         examineResultDesc: examineResult === 1 ? '通过' : '不通过',               // 收款方网银凭证链接数组
@@ -394,7 +379,7 @@ const AuditDetail: React.FC = observer(() => {
           >
             返回
           </Button>
-          <h2>结算单审核详情 - {settlementDetail.settlementNo}</h2>
+          <h2>结算单审核详情 - {settlementDetail?.settlementDTO?.settlementNo}</h2>
         </Space>
       </div>
 
@@ -402,22 +387,22 @@ const AuditDetail: React.FC = observer(() => {
       <Card title="基础信息" className={styles.card}>
         <Descriptions column={3} bordered>
           <Descriptions.Item label="结算单号" span={1}>
-            {settlementDetail.settlementNo}
+            {settlementDetail?.settlementDTO?.settlementNo}
           </Descriptions.Item>
           <Descriptions.Item label="订单号" span={1}>
-            {settlementDetail.orderNo}
+            {settlementDetail?.settlementDTO?.orderNo}
           </Descriptions.Item>
           <Descriptions.Item label="结算金额" span={1}>
-            {settlementDetail.amountStr}
+            {settlementDetail?.settlementDTO?.amountStr}
           </Descriptions.Item>
           <Descriptions.Item label="收款账户" span={1}>
-            {settlementDetail.receiveBankCardInfo.accountName}
+            {settlementDetail?.settlementDTO?.receiveBankCardInfo?.accountName}
           </Descriptions.Item>
           <Descriptions.Item label="收款支行" span={1}>
-          {settlementDetail.receiveBankCardInfo.bankBranchName}
+          {settlementDetail?.settlementDTO.receiveBankCardInfo?.bankBranchName}
           </Descriptions.Item>
           <Descriptions.Item label="户名" span={1}>
-          {settlementDetail.receiveBankCardInfo.bankName}
+          {settlementDetail?.settlementDTO?.receiveBankCardInfo?.bankName}
           </Descriptions.Item>
           {/* <Descriptions.Item label="创建时间" span={1}>
             {settlementDetail.createTime}
@@ -432,7 +417,7 @@ const AuditDetail: React.FC = observer(() => {
       <Card title="用户上传凭证" className={styles.card}>
         <Table
           columns={voucherColumns}
-          dataSource={settlementDetail.settlementRemitDTOS}
+          dataSource={settlementDetail.settlementRemitDTOList}
           pagination={false}
           scroll={{ x: 'max-content' }}
         />
@@ -575,6 +560,6 @@ const AuditDetail: React.FC = observer(() => {
       </Modal>
     </div>
   );
-});
+};
 
 export default AuditDetail;

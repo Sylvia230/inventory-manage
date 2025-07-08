@@ -21,8 +21,8 @@ function stringify(data:any) {
 
 const instance = axios.create({
 	// baseURL: process.env.NEXT_PUBLIC_API_URL, // 使用环境变量或默认值
-	// baseURL: 'http://120.26.232.36/gdv', // 使用环境变量或默认值,
-	baseURL: 'http://127.0.0.1:9001/api',
+	baseURL: window.location.origin + '/gdv', // 使用环境变量或默认值,
+	// baseURL: 'http://127.0.0.1:9001/api',
 	headers: {
 		"Content-Type": "application/json; charset=utf-8",
 	} as AxiosRequestHeaders,

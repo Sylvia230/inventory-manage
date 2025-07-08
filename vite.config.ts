@@ -24,11 +24,11 @@ export default defineConfig({
 		host: '127.0.0.1',
 		port: 9001,
 		proxy: {
-			['/api']: {
+			['/gdv']: {
 				target: 'http://120.26.232.36/gdv/',
 				changeOrigin: true,
 				secure: false,
-				rewrite: (path) => path.replace(/^\/api/, ''),
+				rewrite: (path) => path.replace(/^\/gdv/, ''),
 				configure: (proxy, options) => {
 					proxy.on('proxyReq', (proxyReq, req, res) => {
 						// 移除可能导致跨域问题的请求头
