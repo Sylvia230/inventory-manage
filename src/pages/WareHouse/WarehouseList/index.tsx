@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Table, Button, Form, Input, Select, Space, Card, Row, Col, Tag, Modal, Cascader, message } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Form, Input, Select, Space, Card, Row, Col, Tag, Modal, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import styles from './index.module.less';
 import { SearchOutlined, ReloadOutlined, PlusOutlined } from '@ant-design/icons';
+import { getProvinceListApi, getCityListApi, getDistrictListApi } from '@/services/wareHouse';
 
 interface WarehouseRecord {
   key: string;
@@ -22,6 +23,107 @@ const WarehouseList: React.FC = () => {
   const [addForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
+  
+  // 省市区数据状态
+  const [provinces, setProvinces] = useState<Array<{value: string, name: string}>>([]);
+  const [provinceId, setProvinceId] = useState<string>('');
+  const [cities, setCities] = useState<Array<{value: string, name: string}>>([]);
+  const [cityId, setCityId] = useState<string>('');
+  const [districts, setDistricts] = useState<Array<{value: string, name: string}>>([]);
+  const [districtId, setDistrictId] = useState<string>('');
+  const [loadingProvinces, setLoadingProvinces] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
+
+  // 获取省份数据
+  const getProvinces = async () => {
+    setLoadingProvinces(true);
+    try {
+      const res = await getProvinceListApi({});
+      console.log(res, 'response');
+      // API返回的数据结构应该是一个数组，包含 {id, name} 或 {value, label} 格式
+      setProvinces(res || []);
+    } catch (error) {
+      console.error('获取省份数据失败:', error);
+      message.error('获取省份数据失败');
+    } finally {
+      setLoadingProvinces(false);
+    }
+  };
+
+  // 根据省份获取城市数据
+  const getCities = async (provinceCode: string) => {
+    setLoadingCities(true);
+    try {
+      const response = await getCityListApi({ provinceCode  });
+      console.log(response, 'cities response');
+      setCities(response || []);
+    } catch (error) {
+      console.error('获取城市数据失败:', error);
+      message.error('获取城市数据失败');
+    } finally {
+      setLoadingCities(false);
+    }
+  };
+
+  // 根据城市获取区域数据
+  const getDistricts = async (cityId: string) => {
+    setLoadingDistricts(true);
+    try {
+      const response = await getDistrictListApi({ 
+        cityId: cityId,
+        provinceId: provinceId.split('-')[0]
+       });
+      console.log(response, 'districts response');
+      setDistricts(response || []);
+    } catch (error) {
+      console.error('获取区域数据失败:', error);
+      message.error('获取区域数据失败');
+    } finally {
+      setLoadingDistricts(false);
+    }
+  };
+
+  // 处理省份变化
+  const handleProvinceChange = (provinceId: string) => {
+    setProvinceId(provinceId);
+    // 清空城市和区域
+    addForm.setFieldsValue({
+      city: undefined,
+      district: undefined,
+    });
+    setCities([]);
+    setDistricts([]);
+    
+    if (provinceId) {
+      getCities(provinceId.split('-')[1]);
+    }
+  };
+
+  // 处理城市变化
+  const handleCityChange = (cityId: string) => {
+    setCityId(cityId);
+    // 清空区域
+    addForm.setFieldsValue({
+      district: undefined,
+    });
+    setDistricts([]);
+    setDistrictId('');
+    
+    if (cityId) {
+      getDistricts(cityId);
+    }
+  };
+
+  // 处理区域变化
+  const handleDistrictChange = (districtId: string) => {
+    setDistrictId(districtId);
+  };
+
+  // 组件加载时获取省份数据
+  useEffect(() => {
+    getProvinces();
+  }, []);
 
   // 仓库类型选项
   const warehouseTypeOptions = [
@@ -37,41 +139,7 @@ const WarehouseList: React.FC = () => {
     { label: '关闭', value: '关闭' },
   ];
 
-  // 省市区数据
-  const areaOptions = [
-    {
-      value: 'zhejiang',
-      label: '浙江省',
-      children: [
-        {
-          value: 'hangzhou',
-          label: '杭州市',
-          children: [
-            {
-              value: 'xihu',
-              label: '西湖区',
-            },
-          ],
-        },
-      ],
-    },
-    {
-      value: 'jiangsu',
-      label: '江苏省',
-      children: [
-        {
-          value: 'nanjing',
-          label: '南京市',
-          children: [
-            {
-              value: 'zhonghuamen',
-              label: '中华门',
-            },
-          ],
-        },
-      ],
-    },
-  ];
+
 
   // 表格列定义
   const columns: ColumnsType<WarehouseRecord> = [
@@ -207,6 +275,12 @@ const WarehouseList: React.FC = () => {
   const handleAddCancel = () => {
     setAddModalVisible(false);
     addForm.resetFields();
+    // 重置省市区状态
+    setProvinceId('');
+    setCityId('');
+    setDistrictId('');
+    setCities([]);
+    setDistricts([]);
   };
 
   const handleAddSubmit = async () => {
@@ -326,15 +400,71 @@ const WarehouseList: React.FC = () => {
           
           <Col span={24}>
             <Form.Item
-              name="area"
-              label="仓库地址"
-              rules={[{ required: true, message: '请选择仓库地址' }]}
+              name="province"
+              label="省份"
+              rules={[{ required: true, message: '请选择省份' }]}
             >
-              <Cascader
-                options={areaOptions}
-                placeholder="请选择省/市/区"
-                style={{ width: '100%' }}
-              />
+              <Select
+                placeholder="请选择省份"
+                loading={loadingProvinces}
+                onChange={handleProvinceChange}
+                allowClear
+                value={provinceId}
+              >
+                {
+                  provinces?.map((item:any) => (
+                    <Select.Option key={item.id } value={item.id + '-' + item.code}>
+                      {item.name}
+                    </Select.Option>
+                  ))
+                }
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="city"
+              label="城市"
+              rules={[{ required: true, message: '请选择城市' }]}
+            >
+              <Select
+                placeholder="请选择城市"
+                loading={loadingCities}
+                onChange={handleCityChange}
+                allowClear
+                disabled={cities.length === 0}
+                value={cityId}
+              >
+                {
+                  cities?.map((item:any) => (
+                    <Select.Option key={item.id || item.value} value={item.id || item.value}>
+                      {item.name || item.label}
+                    </Select.Option>
+                  ))
+                }
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="district"
+              label="区域"
+              rules={[{ required: true, message: '请选择区域' }]}
+            >
+              <Select
+                placeholder="请选择区域"
+                loading={loadingDistricts}
+                onChange={handleDistrictChange}
+                allowClear
+                disabled={districts.length === 0}
+                value={districtId}
+              >
+                {
+                  districts?.map((item:any) => (
+                    <Select.Option key={item.id || item.value} value={item.id || item.value}>
+                      {item.name || item.label}
+                    </Select.Option>
+                  ))
+                }
+              </Select>
             </Form.Item>
 
             <Form.Item
