@@ -1,0 +1,75 @@
+.cardWrapper {
+    .ant-card-head {
+        min-height: 44px;
+    }
+}
+
+.form {
+  :global {
+    .ant-form-item {
+      margin-bottom: 16px;
+    }
+  }
+}
+
+.selectedVehicles {
+  margin-top: 24px;
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 4px;
+
+  h4 {
+    margin: 0 0 12px;
+    color: #333;
+    font-size: 14px;
+    font-weight: 500;
+  }
+}
+
+.vehicleList {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 8px;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 3px;
+  }
+}
+
+.vehicleItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  span {
+    margin-right: 8px;
+    
+    &:first-child {
+      color: #999;
+      font-size: 12px;
+    }
+  }
+
+  .vin {
+    margin-left: auto;
+    color: #666;
+    font-size: 12px;
+  }
+}

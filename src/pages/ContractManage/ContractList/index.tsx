@@ -3,6 +3,7 @@ import { Table, Button, Form, Input, Space, Row, Col, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import styles from './index.module.less';
 import { SearchOutlined, ReloadOutlined, EyeOutlined } from '@ant-design/icons';
+import { GetContractTemplateApi } from '@/services/contract';
 
 interface ContractRecord {
   key: string;

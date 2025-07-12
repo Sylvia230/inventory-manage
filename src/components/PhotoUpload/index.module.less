@@ -1,0 +1,113 @@
+.photoUpload {
+  .photoGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .photoItem {
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .photoLabel {
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    
+    .required {
+      color: #ff4d4f;
+      margin-left: 4px;
+    }
+  }
+
+  .upload {
+    :global {
+      .ant-upload-select {
+        width: 100% !important;
+        height: 110px !important;
+        border: 2px dashed #d9d9d9;
+        border-radius: 6px;
+        background: #fafafa;
+        transition: all 0.3s;
+        
+        &:hover {
+          border-color: #1890ff;
+        }
+      }
+      
+      .ant-upload-list-picture-card-container {
+        width: 100% !important;
+      }
+      
+      .ant-upload-list-picture-card .ant-upload-list-item {
+        width: 100% !important;
+        height: 140px !important;
+      }
+      
+      .ant-upload-select .anticon {
+        font-size: 24px;
+        color: #999;
+      }
+      
+      .ant-upload-select div {
+        margin-top: 8px;
+        color: #666;
+        font-size: 14px;
+      }
+      
+      // 上传成功后的图片样式
+      .ant-upload-list-picture-card .ant-upload-list-item-info {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .ant-upload-list-picture-card .ant-upload-list-item-actions {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+      }
+    }
+  }
+
+  .uploadButton {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #999;
+    
+    .anticon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+  }
+
+  .photoActions {
+    margin-top: 8px;
+    text-align: center;
+    
+    :global {
+      .ant-btn-link {
+        padding: 0 8px;
+        height: auto;
+        font-size: 12px;
+      }
+    }
+  }
+} 

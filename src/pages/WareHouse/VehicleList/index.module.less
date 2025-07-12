@@ -13,14 +13,218 @@
   }
 }
 
+// 照片展示区域样式
+.photoSection {
+  margin-bottom: 24px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
 .photoGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-top: 16px;
-  max-height: 600px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// .photoItem {
+//   border-radius: 4px;
+//   overflow: hidden;
+// }
+.photoItem {
+  flex: 0 0 calc(24% - 11px); // 一行3个，减去gap的影响
+  min-width: 120px;
+  max-width: calc(25% - 11px);
+  
+  // 响应式布局
+  @media (max-width: 768px) {
+    flex: 0 0 calc(50% - 8px); // 小屏幕一行2个
+    max-width: calc(50% - 8px);
+  }
+  
+  @media (max-width: 480px) {
+    flex: 0 0 100%; // 超小屏幕一行1个
+    max-width: 100%;
+  }
+  
+  :global(.ant-form-item) {
+    margin-bottom: 16px;
+    width: 100%;
+  }
+  
+  :global(.ant-form-item-label) {
+    padding-bottom: 4px;
+  }
+  
+  :global(.ant-upload-select) {
+    width: 100% !important;
+    height: 110px !important;
+    border: 2px dashed #d9d9d9;
+    border-radius: 6px;
+    background: #fafafa;
+    transition: all 0.3s;
+    
+    &:hover {
+      border-color: #1890ff;
+    }
+  }
+  
+  :global(.ant-upload-list-picture-card-container) {
+    width: 100% !important;
+  }
+  
+  :global(.ant-upload-list-picture-card .ant-upload-list-item) {
+    width: 100% !important;
+    height: 140px !important;
+  }
+  
+  :global(.ant-upload-select .anticon) {
+    font-size: 24px;
+    color: #999;
+  }
+  
+  :global(.ant-upload-select div) {
+    margin-top: 8px;
+    color: #666;
+    font-size: 14px;
+  }
+  
+  // 上传成功后的图片样式
+  :global(.ant-upload-list-picture-card .ant-upload-list-item-info) {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  :global(.ant-upload-list-picture-card .ant-upload-list-item-actions) {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+  }
+}
+
+.photoLabel {
+  padding: 8px;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+}
+
+.photoWrapper {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  cursor: pointer;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &:hover .photoOverlay {
+    opacity: 1;
+  }
+}
+
+.photoOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+
+  :global {
+    .anticon {
+      color: white;
+      font-size: 24px;
+    }
+  }
+}
+
+.photoEmpty {
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  color: #999;
+  font-size: 14px;
+}
+
+
+// 已上传照片的样式
+.uploadedPhoto {
+  position: relative;
+  width: 200px;
+  height: 140px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  
+  &:hover .photoActions {
+    opacity: 1;
+  }
+  
+  img {
+    transition: transform 0.3s ease;
+    
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+}
+
+.photoActions {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  
+  :global(.ant-btn) {
+    border: none;
+    box-shadow: none;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+}
+
+// 详情弹窗样式
+.detailContent {
+  padding: 0 16px;
+  max-height: calc(100vh - 250px);
   overflow-y: auto;
-  padding-right: 8px;
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -36,30 +240,92 @@
   }
 }
 
-.photoItem {
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1890ff;
+  margin-bottom: 0px;
+  position: relative;
+  padding-left: 12px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 16px;
+    background-color: #1890ff;
+    border-radius: 2px;
+  }
+}
+
+.descriptionSection {
+  margin-bottom: 24px;
+
   :global {
-    .ant-form-item {
-      margin-bottom: 12px;
+    .ant-descriptions-header {
+      margin-bottom: 16px;
     }
 
-    .ant-form-item-label {
-      padding-bottom: 4px;
-      line-height: 1.2;
+    .ant-descriptions-bordered .ant-descriptions-item-label {
+      background-color: #fafafa;
+      width: 120px;
     }
 
-    .ant-upload-list-picture-card .ant-upload-list-item {
-      padding: 4px;
-    }
-
-    .ant-upload.ant-upload-select-picture-card {
-      width: 100%;
-      height: 100px;
-      margin: 0;
-    }
-
-    .ant-upload-list-picture-card .ant-upload-list-item {
-      width: 100%;
-      height: 100px;
+    .ant-descriptions-bordered .ant-descriptions-item-content {
+      padding: 12px 24px;
     }
   }
-} 
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// 照片Tab样式
+.photoTabs {
+  :global {
+    .ant-tabs-nav {
+      margin-bottom: 16px;
+    }
+
+    .ant-tabs-tab {
+      padding: 12px 24px;
+      font-size: 14px;
+      
+      &:hover {
+        color: #1890ff;
+      }
+    }
+
+    .ant-tabs-tab-active {
+      background: #f0f5ff;
+      border-radius: 4px 4px 0 0;
+      
+      .ant-tabs-tab-btn {
+        color: #1890ff;
+        font-weight: 500;
+      }
+    }
+
+    .ant-tabs-ink-bar {
+      background: #1890ff;
+      height: 3px;
+      border-radius: 3px 3px 0 0;
+    }
+
+    .ant-tabs-content {
+      background: #fff;
+      padding: 16px;
+      border: 1px solid #f0f0f0;
+      border-radius: 0 4px 4px 4px;
+    }
+  }
+}
+
+// Empty状态样式调整
+:global(.ant-empty) {
+  margin: 32px 0;
+}

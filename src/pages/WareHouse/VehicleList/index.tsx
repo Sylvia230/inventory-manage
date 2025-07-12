@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Table, Button, Form, Input, Select, Space, Row, Col, Tag, Modal, DatePicker, Radio, Upload, message } from 'antd';
+import { Table, Button, Form, Input, Select, Space, Row, Col, Tag, Modal, message, Descriptions, Tabs, Empty, Image } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { UploadFile } from 'antd/es/upload/interface';
-import { PlusOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, EyeOutlined, GlobalOutlined } from '@ant-design/icons';
 import styles from './index.module.less';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import VehiclePhotoUpload from '@/components/VehiclePhotoUpload';
 
 interface VehicleRecord {
   key: string;
@@ -18,6 +18,31 @@ interface VehicleRecord {
   storageAge: number;
   gpsStatus: string;
   vehicleStatus: string;
+  // 新增字段
+  hasCertificate?: boolean;
+  contactPerson?: string;
+  contactPhone?: string;
+  gpsDeviceNo?: string;
+  gpsInstallLocation?: string;
+  gpsBindTime?: string;
+  gpsBindPerson?: string;
+  gpsDeviceSource?: string;
+  storageType?: string;
+  systemStorageTime?: string;
+  actualStorageTime?: string;
+  storageAdmin?: string;
+
+  // 验车信息字段
+  inspectionTime?: string;
+  inspector?: string;
+  mileage?: number;
+  productionDate?: string;
+  inspectionPhotos?: {
+    name: string;
+    label: string;
+    url: string;
+  }[];
+  damagePhotos?: string[];
 }
 
 interface UploadModalProps {
@@ -28,12 +53,16 @@ interface UploadModalProps {
 }
 
 const UploadModal: React.FC<UploadModalProps> = ({ visible, onCancel, onOk, loading }) => {
-  const [form] = Form.useForm();
-  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [photoData, setPhotoData] = useState<Record<string, UploadFile[]>>({});
+  const [formData, setFormData] = useState<any>({});
 
   const handleSubmit = async () => {
     try {
-      const values = await form.validateFields();
+      // 合并照片数据和表单数据
+      const values = {
+        ...formData,
+        photos: photoData
+      };
       onOk(values);
     } catch (error) {
       console.error('表单验证失败:', error);
@@ -41,37 +70,18 @@ const UploadModal: React.FC<UploadModalProps> = ({ visible, onCancel, onOk, load
   };
 
   const handleCancel = () => {
-    form.resetFields();
-    setFileList([]);
+    setPhotoData({});
+    setFormData({});
     onCancel();
   };
 
-  const uploadProps = {
-    name: 'file',
-    multiple: false,
-    action: '/api/upload', // TODO: 替换为实际的上传接口
-    onChange(info: any) {
-      if (info.file.status === 'done') {
-        message.success(`${info.file.name} 上传成功`);
-      } else if (info.file.status === 'error') {
-        message.error(`${info.file.name} 上传失败`);
-      }
-    },
+  const handlePhotoChange = (value: Record<string, UploadFile[]>) => {
+    setPhotoData(value);
   };
 
-  const photoList = [
-    { name: 'leftFront45', label: '左前45度照片' },
-    { name: 'leftFrontDoor', label: '左前门含A柱的照片' },
-    { name: 'leftRearDoor', label: '左后门的照片' },
-    { name: 'rearWheel', label: '后轮轮毂照片' },
-    { name: 'centerConsole', label: '中控台照片' },
-    { name: 'dashboard', label: '仪表盘照片' },
-    { name: 'rightRear45', label: '右后45度照片' },
-    { name: 'rightFrontDoor', label: '右前门含A柱的照片' },
-    { name: 'nameplate', label: '铭牌照片' },
-    { name: 'inventoryForm', label: '商品车入库信息采集表' },
-    { name: 'engineBay', label: '发动机舱' },
-  ];
+  const handleFormChange = (formValues: any) => {
+    setFormData(formValues);
+  };
 
   return (
     <Modal
@@ -85,59 +95,293 @@ const UploadModal: React.FC<UploadModalProps> = ({ visible, onCancel, onOk, load
       confirmLoading={loading}
       bodyStyle={{ padding: '24px 24px 0' }}
     >
-      <Form
-        form={form}
-        layout="inline"
-        requiredMark={false}
-      >
-        <Row gutter={24} style={{ width: '100%', marginBottom: 16 }}>
-          <Col span={12}>
-            <Form.Item
-              name="productionDate"
-              label="生产日期"
-              rules={[{ required: true, message: '请选择生产日期' }]}
-            >
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="hasCertificate"
-              label="关单/合格证"
-              rules={[{ required: true, message: '请选择是否有关单/合格证' }]}
-            >
-              <Radio.Group>
-                <Radio value="yes">有</Radio>
-                <Radio value="no">无</Radio>
-              </Radio.Group>
-            </Form.Item>
-          </Col>
-        </Row>
+      <VehiclePhotoUpload
+        value={photoData}
+        onChange={handlePhotoChange}
+        showForm={true}
+        onFormChange={handleFormChange}
+        maxSize={10}
+      />
+    </Modal>
+  );
+};
 
-        <div className={styles.photoGrid}>
-          {photoList.map((photo, index) => (
-            <div key={photo.name} className={styles.photoItem}>
-              <Form.Item
-                name={photo.name}
-                // label={photo.label}
-                rules={[{ required: true, message: `请上传${photo.label}` }]}
-              >
-                <Upload
-                  {...uploadProps}
-                  listType="picture-card"
-                  maxCount={1}
-                  style={{width: '200px'}}
-                >
-                  <div>
-                    <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>{photo.label}</div>
-                  </div>
-                </Upload>
-              </Form.Item>
-            </div>
-          ))}
-        </div>
+// 添加GPS绑定弹窗组件
+interface BindGPSModalProps {
+  visible: boolean;
+  onCancel: () => void;
+  onOk: (reason: string) => void;
+  loading?: boolean;
+}
+
+const BindGPSModal: React.FC<BindGPSModalProps> = ({ visible, onCancel, onOk, loading }) => {
+  const [form] = Form.useForm();
+
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      onOk(values.reason);
+    } catch (error) {
+      console.error('表单验证失败:', error);
+    }
+  };
+
+  const handleCancel = () => {
+    form.resetFields();
+    onCancel();
+  };
+
+  return (
+    <Modal
+      title="绑定GPS"
+      open={visible}
+      onOk={handleSubmit}
+      onCancel={handleCancel}
+      width={600}
+      okText="确认"
+      cancelText="取消"
+      confirmLoading={loading}
+    >
+      <Form form={form} layout="inline">
+        <Form.Item
+          name="reason"
+          label="绑定原因"
+          rules={[
+            { required: true, message: '请输入绑定原因' },
+            { min: 200, message: '绑定原因至少需要200个字' }
+          ]}
+        >
+          <Input.TextArea
+            rows={10}
+            showCount
+            maxLength={500}
+            placeholder="请详细描述绑定GPS的原因（至少200字）"
+            style={{ width: '440px' }}
+          />
+        </Form.Item>
       </Form>
+    </Modal>
+  );
+};
+
+// 添加车辆详情弹窗组件
+interface VehicleDetailModalProps {
+  visible: boolean;
+  onCancel: () => void;
+  data: VehicleRecord | null;
+}
+
+// 照片类型配置
+const PHOTO_LIST = [
+  { name: 'leftFront45', label: '左前45度照片', value: '1' },    
+  { name: 'leftFrontDoor', label: '左前门含A柱的照片', value: '2' },
+  { name: 'leftRearDoor', label: '左后门的照片', value: '3' },
+  { name: 'rearWheel', label: '后轮轮毂照片', value: '4' },
+  { name: 'centerConsole', label: '中控台照片', value: '5' },
+  { name: 'dashboard', label: '仪表盘照片', value: '6' },
+  { name: 'rightRear45', label: '右后45度照片', value: '7' },
+  { name: 'rightFrontDoor', label: '右前门含A柱的照片', value: '8' },
+  { name: 'nameplate', label: '铭牌照片', value: '9' },
+  { name: 'inventoryForm', label: '商品车入库信息采集表', value: '10' },
+  { name: 'engineBay', label: '发动机舱', value: '11' },
+];
+
+const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({ visible, onCancel, data }) => {
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
+  const [previewTitle, setPreviewTitle] = useState('');
+
+  if (!data) return null;
+
+  // 处理照片预览
+  const handlePreview = (url: string, title: string = '照片预览') => {
+    setPreviewImage(url);
+    setPreviewTitle(title);
+    setPreviewVisible(true);
+  };
+
+  // 常规照片Tab内容
+  const renderRegularPhotos = () => (
+    <div className={styles.photoGrid}>
+      {PHOTO_LIST.map((photo) => {
+        const photoData = data.inspectionPhotos?.find(p => p.name === photo.name);
+        return (
+          <div key={photo.name} className={styles.photoItem}>
+            <div className={styles.photoLabel}>{photo.label}</div>
+            {photoData ? (
+              <div className={styles.photoWrapper} onClick={() => handlePreview(photoData.url, photo.label)}>
+                <img src={photoData.url} alt={photo.label} />
+                <div className={styles.photoOverlay}>
+                  <EyeOutlined />
+                </div>
+              </div>
+            ) : (
+              <div className={styles.photoEmpty}>暂无照片</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  // 质损照片Tab内容
+  const renderDamagePhotos = () => (
+    <div className={styles.photoGrid}>
+      {data.damagePhotos?.map((url, index) => (
+        <div key={index} className={styles.photoItem}>
+          <div className={styles.photoLabel}>质损照片 {index + 1}</div>
+          <div className={styles.photoWrapper} onClick={() => handlePreview(url, `质损照片 ${index + 1}`)}>
+            <img src={url} alt={`质损照片 ${index + 1}`} />
+            <div className={styles.photoOverlay}>
+              <EyeOutlined />
+            </div>
+          </div>
+        </div>
+      )) || (
+        <Empty description="暂无质损照片" />
+      )}
+    </div>
+  );
+
+  const tabItems = [
+    {
+      key: 'regular',
+      label: '常规照片',
+      children: renderRegularPhotos(),
+    },
+    {
+      key: 'damage',
+      label: (
+        <span>
+          质损照片
+          {data.damagePhotos?.length ? (
+            <Tag color="red" style={{ marginLeft: 8 }}>
+              {data.damagePhotos.length}
+            </Tag>
+          ) : null}
+        </span>
+      ),
+      children: renderDamagePhotos(),
+    },
+  ];
+
+  return (
+    <Modal
+      title="车辆详情"
+      open={visible}
+      onCancel={onCancel}
+      width={1000}
+      footer={[
+        <Button key="close" onClick={onCancel}>
+          关闭
+        </Button>
+      ]}
+    >
+      <div className={styles.detailContent}>
+        {/* 车辆信息 */}
+        <Descriptions
+          title={<div className={styles.sectionTitle}>车辆信息</div>}
+          bordered
+          column={2}
+          size="small"
+          className={styles.descriptionSection}
+        >
+          <Descriptions.Item label="车架号">{data.vin}</Descriptions.Item>
+          <Descriptions.Item label="车辆属性">{data.vehicleType}</Descriptions.Item>
+          <Descriptions.Item label="车辆库龄">{data.storageAge}天</Descriptions.Item>
+          <Descriptions.Item label="关单/合格证">
+            {data.hasCertificate ? '有' : '无'}
+          </Descriptions.Item>
+        </Descriptions>
+
+        {/* 基本信息 */}
+        <Descriptions
+          title={<div className={styles.sectionTitle}>基本信息</div>}
+          bordered
+          column={2}
+          size="small"
+          className={styles.descriptionSection}
+        >
+          <Descriptions.Item label="业务类型">{data.productType}</Descriptions.Item>
+          <Descriptions.Item label="客户">{data.customer}</Descriptions.Item>
+          <Descriptions.Item label="联系人">{data.contactPerson || '-'}</Descriptions.Item>
+          <Descriptions.Item label="联系方式">{data.contactPhone || '-'}</Descriptions.Item>
+          <Descriptions.Item label="停放仓库" span={2}>{data.warehouse}</Descriptions.Item>
+        </Descriptions>
+
+        {/* GPS信息 */}
+        <Descriptions
+          title={<div className={styles.sectionTitle}>在库监管GPS信息</div>}
+          bordered
+          column={2}
+          size="small"
+          className={styles.descriptionSection}
+        >
+          <Descriptions.Item label="绑定状态">
+            <Tag color={data.gpsStatus === '在线' ? 'success' : data.gpsStatus === '未绑定' ? 'warning' : 'error'}>
+              {data.gpsStatus}
+            </Tag>
+          </Descriptions.Item>
+          <Descriptions.Item label="当前设备号">{data.gpsDeviceNo || '-'}</Descriptions.Item>
+          <Descriptions.Item label="安装位置">{data.gpsInstallLocation || '-'}</Descriptions.Item>
+          <Descriptions.Item label="绑定时间">{data.gpsBindTime || '-'}</Descriptions.Item>
+          <Descriptions.Item label="绑定人">{data.gpsBindPerson || '-'}</Descriptions.Item>
+          <Descriptions.Item label="设备来源">{data.gpsDeviceSource || '-'}</Descriptions.Item>
+        </Descriptions>
+
+        {/* 入库信息 */}
+        <Descriptions
+          title={<div className={styles.sectionTitle}>入库信息</div>}
+          bordered
+          column={2}
+          size="small"
+          className={styles.descriptionSection}
+        >
+          <Descriptions.Item label="入库类型">{data.storageType || '-'}</Descriptions.Item>
+          <Descriptions.Item label="系统入库时间">{data.systemStorageTime || '-'}</Descriptions.Item>
+          <Descriptions.Item label="实际入库时间">{data.actualStorageTime || '-'}</Descriptions.Item>
+          <Descriptions.Item label="入库管理员">{data.storageAdmin || '-'}</Descriptions.Item>
+        </Descriptions>
+
+        {/* 验车信息 */}
+        <Descriptions
+          title={<div className={styles.sectionTitle}>验车信息</div>}
+          bordered
+          column={2}
+          size="small"
+          className={styles.descriptionSection}
+        >
+          <Descriptions.Item label="验车时间">{data.inspectionTime || '-'}</Descriptions.Item>
+          <Descriptions.Item label="验车人">{data.inspector || '-'}</Descriptions.Item>
+          <Descriptions.Item label="里程数">{data.mileage ? `${data.mileage}公里` : '-'}</Descriptions.Item>
+          <Descriptions.Item label="生产日期">{data.productionDate || '-'}</Descriptions.Item>
+          <Descriptions.Item label="合格证/关单">{data.hasCertificate ? '有' : '无'}</Descriptions.Item>
+        </Descriptions>
+
+        {/* 照片展示区域改为Tab形式 */}
+        <div className={styles.photoSection}>
+          <div className={styles.sectionTitle}>车辆照片</div>
+          <Tabs
+            items={tabItems}
+            className={styles.photoTabs}
+          />
+        </div>
+      </div>
+
+      {/* 照片预览模态框 */}
+      <Modal
+        open={previewVisible}
+        title={previewTitle}
+        footer={null}
+        onCancel={() => setPreviewVisible(false)}
+        width={800}
+      >
+        <Image
+          alt={previewTitle}
+          style={{ width: '100%' }}
+          src={previewImage}
+        />
+      </Modal>
     </Modal>
   );
 };
@@ -147,6 +391,10 @@ const VehicleListInStock: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<VehicleRecord | null>(null);
+  const [bindGPSModalVisible, setBindGPSModalVisible] = useState(false);
+  const [currentBindRecord, setCurrentBindRecord] = useState<VehicleRecord | null>(null);
+  const [bindLoading, setBindLoading] = useState(false);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
 
   // 车辆状态选项
   const vehicleStatusOptions = [
@@ -207,11 +455,11 @@ const VehicleListInStock: React.FC = () => {
       render: (age: number) => `${age}天`,
     },
     {
-      title: 'Gps状态',
+      title: 'GPS状态',
       dataIndex: 'gpsStatus',
       width: 100,
       render: (status: string) => (
-        <Tag color={status === '在线' ? 'success' : 'error'}>
+        <Tag color={status === '在线' ? 'success' : status === '未绑定' ? 'warning' : 'error'}>
           {status}
         </Tag>
       ),
@@ -234,12 +482,21 @@ const VehicleListInStock: React.FC = () => {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 180,
+      width: 240,
       render: (_, record) => (
         <Space size="middle">
-          <Button type="link" onClick={() => handleUpload(record)}>
+          {record.gpsStatus === '未绑定' && (
+            <Button 
+              type="link" 
+              icon={<GlobalOutlined />}
+              onClick={() => handleBindGPS(record)}
+            >
+              绑定GPS
+            </Button>
+          )}
+          {/* <Button type="link" onClick={() => handleUpload(record)}>
             上传照片
-          </Button>
+          </Button> */}
           <Button type="link" onClick={() => handleViewDetail(record)}>
             查看
           </Button>
@@ -271,7 +528,7 @@ const VehicleListInStock: React.FC = () => {
       customer: '李四',
       warehouse: '北京分仓',
       storageAge: 30,
-      gpsStatus: '离线',
+      gpsStatus: '未绑定',
       vehicleStatus: '出库中',
     },
   ]);
@@ -285,9 +542,10 @@ const VehicleListInStock: React.FC = () => {
     form.resetFields();
   };
 
+  // 处理查看详情
   const handleViewDetail = (record: VehicleRecord) => {
-    console.log('查看车辆详情:', record);
-    // TODO: 实现查看详情逻辑
+    setCurrentRecord(record);
+    setDetailModalVisible(true);
   };
 
   const handleUpload = (record: VehicleRecord) => {
@@ -300,6 +558,36 @@ const VehicleListInStock: React.FC = () => {
     // TODO: 调用上传接口
     message.success('上传成功');
     setUploadModalVisible(false);
+  };
+
+  // 处理绑定GPS
+  const handleBindGPS = (record: VehicleRecord) => {
+    setCurrentBindRecord(record);
+    setBindGPSModalVisible(true);
+  };
+
+  // 处理绑定GPS提交
+  const handleBindGPSSubmit = async (reason: string) => {
+    if (!currentBindRecord) return;
+    
+    setBindLoading(true);
+    try {
+      // TODO: 调用绑定GPS的API
+      // await bindGPSApi({
+      //   vehicleId: currentBindRecord.id,
+      //   reason: reason
+      // });
+      
+      message.success('GPS绑定成功');
+      setBindGPSModalVisible(false);
+      // 刷新列表数据
+      // fetchData();
+    } catch (error) {
+      message.error('GPS绑定失败');
+      console.error('绑定GPS失败:', error);
+    } finally {
+      setBindLoading(false);
+    }
   };
 
   return (
@@ -384,6 +672,19 @@ const VehicleListInStock: React.FC = () => {
         onCancel={() => setUploadModalVisible(false)}
         onOk={handleUploadSubmit}
         loading={loading}
+      />
+
+      <BindGPSModal
+        visible={bindGPSModalVisible}
+        onCancel={() => setBindGPSModalVisible(false)}
+        onOk={handleBindGPSSubmit}
+        loading={bindLoading}
+      />
+
+      <VehicleDetailModal
+        visible={detailModalVisible}
+        onCancel={() => setDetailModalVisible(false)}
+        data={currentRecord}
       />
     </div>
   );

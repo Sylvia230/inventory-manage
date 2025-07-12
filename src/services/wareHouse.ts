@@ -45,3 +45,72 @@ export const enableOrDisableWarehouseApi = async (params: any): Promise<any> => 
 export const getWarehouseKeeperListApi = async (params: any): Promise<any> => {
     return axios.post('/userStaff/pageQuery', params).then(res => res.result);
 };
+
+export interface InboundListParams {
+  inboundNo?: string;
+  vin?: string;
+  productType?: string;
+  pageSize: number;
+  current: number;
+}
+
+export interface InboundDetailParams {
+  inboundId: string;
+}
+
+export interface InboundListItem {
+  key: string;
+  inStockNo: string;
+  warehouse: string;
+  expectedTime: string;
+  productType: string;
+  businessNo: string;
+  customer: string;
+  status: string;
+}
+
+export interface InboundListResponse {
+  total: number;
+  list: InboundListItem[];
+}
+
+export const getInboundListApi = async (params: any): Promise<any> => {
+  return await axios.post('/wmsInbound/pageQuery', params).then(res => res);
+}
+
+// 新增入库
+export const addInboundApi = async (params: any): Promise<any> => {
+    return axios.post('/wmsInbound/createWmsInbound', params).then(res => res);
+};
+
+// 入库详情
+export const getInboundDetailApi = async (params: any): Promise<any> => {
+    // console.log(params, 'getInboundDetailApi');
+    return axios.get(`/wmsInbound/detail`, params).then(res => res);
+};
+
+// 入库类型
+export const getInboundTypeApi = async (params: any): Promise<any> => {
+    return axios.get(`/enums/InboundTypeEnum`, params).then(res => res);
+};
+
+// 获取商家接口
+export const getCustomerListApi = async (params: any): Promise<any> => {
+    return axios.post(`/vendor/pageQuery`, params).then(res => res);
+};
+
+//  获取外观内饰接口
+export const getAppearanceAndInteriorListApi = async (params: any): Promise<any> => {
+    return axios.post(`/carVehicleColor/pageQuery`, params).then(res => res);
+};
+
+
+// 获取GPS
+export const getGpsListApi = async (params: any): Promise<any> => {
+    return axios.post(`/wmsGpsDevice/pageQuery`, params).then(res => res);
+};
+
+// 入库操作
+export const inboundOperationApi = async (params: any): Promise<any> => {
+    return axios.post(`/wmsInbound/inbound`, params).then(res => res.result);
+};
