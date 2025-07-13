@@ -13,6 +13,7 @@ import { GetCapitalApi, SaveBusinessConfigApi } from '@/services/capital';
 import { GetEnumApi } from '@/services/user';
 import { GetContractTemplateApi } from '@/services/contract';
 import { GetBusinessConfigApi } from '@/services/capital';
+import { id } from '@antv/g2/lib/data/utils/arc/sort';
 
 interface BusinessConfigRecord {
   key: string;
@@ -90,22 +91,22 @@ const BusinessConfig: React.FC = () => {
       const res = await GetBusinessConfigApi(params);
       console.log('....fetchData', res);
       if (res?.result) {
-        // 转换API返回的数据格式为页面需要的格式
-        const list = (res.result || []).map((item: any) => ({
-          key: item.id,
-          id: item.id,
-          name: item.name,
-          capitalId: item.capitalId,
-          capitalName: item.capitalName,
-          bizCategory: item.bizCategory,
-          bizCategorySub: item.bizCategorySub,
-          term: item.term,
-          rate: item.rate,
-          createTime: item.createTime,
-          updateTime: item.updateTime,
-        }));
+        // // 转换API返回的数据格式为页面需要的格式
+        // const list = (res.result || []).map((item: any) => ({
+        //   key: item.id,
+        //   id: item.id,
+        //   name: item.name,
+        //   capitalId: item.capitalId,
+        //   capitalName: item.capitalName,
+        //   bizCategory: item.bizCategory,
+        //   bizCategorySub: item.bizCategorySub,
+        //   term: item.term,
+        //   rate: item.rate,
+        //   createTime: item.createTime,
+        //   updateTime: item.updateTime,
+        // }));
         
-        setDataSource(list);
+        setDataSource(res?.result);
         setTotal(res.totalCount || 0);
       } else {
         message.error(res.msg || '获取数据失败');
@@ -427,42 +428,39 @@ const BusinessConfig: React.FC = () => {
   };
 
   // 编辑
-  const handleEdit = (record: BusinessConfigRecord) => {
+  const handleEdit = (record: any) => {
+    console.log('handleEdit', record);
     setIsEdit(true);
     setCurrentRecord(record);
-    modalForm.setFieldsValue({
-      legalRelationName: record.legalRelationName,
-      capital: record.capital,
-      product: record.product,
-      phone: record.phone,
-    });
-    // // 模拟编辑时的合同数据
-    // setContractRows([
-    //   {
-    //     key: '1',
-    //     templateId: 'template_001',
-    //     generateDimension: 'by_vehicle',
-    //   },
-    //   {
-    //     key: '2',
-    //     templateId: 'template_002',
-    //     generateDimension: 'by_order',
-    //   },
-    // ]);
-    // // 模拟编辑时的签章主体数据
-    // setSignatureSubjectRows([
-    //   {
-    //     key: '1',
-    //     roleId: 'role_001',
-    //     merchantId: '1',
-    //   },
-    //   {
-    //     key: '2',
-    //     roleId: 'role_002',
-    //     merchantId: '2',
-    //   },
-    // ]);
-    setIsModalVisible(true);
+    // 提取合同配置和签章主体数据
+  const contractData = record.configContractTemplateList?.map((item: any) => ({
+    key: item.id,
+    templateId: item.contractTemplateId,
+    scope: item.scope,
+  })) || [];
+
+  const signatureSubjectData = record.fixedSignerList?.map((item: any) => ({
+    key: item.id,
+    roleId: item.signerRole,
+    merchantId: item.vendorId,
+  })) || [];
+
+  // 设置表单初始值
+  modalForm.setFieldsValue({
+    name: record.name,
+    capitalId: record.capitalId,
+    bizCategory: record.bizCategory,
+    bizCategorySub: record.bizCategorySub,
+    term: record.term,
+    rate: record.rate,
+  });
+  
+  // 更新下拉筛选选项（根据产品大类）
+  handleProductCategoryChange(record.bizCategory);
+  // 回填合同配置和签章主体数据
+  setContractRows(contractData);
+  setSignatureSubjectRows(signatureSubjectData);
+  setIsModalVisible(true);
   };
 
   // 删除
@@ -585,27 +583,46 @@ const BusinessConfig: React.FC = () => {
       contractRows?.forEach((row: any) => {
         console.log('....row', row, dimensionOptions);
         let selectedDimension = dimensionOptions.find((item: any) => item.value == row.scope);
-        configContractTemplateList.push({   
-          contractTemplateId: row.templateId || '',
-          scope: row.scope || '',
-          scopeDesc: selectedDimension?.label || '',
-        })
+         if(isEdit) {
+           configContractTemplateList.push({   
+            contractTemplateId: row.templateId || '',
+            scope: row.scope || '',
+            scopeDesc: selectedDimension?.label || '',
+            id: row.key || '',
+          })
+        } else {
+          configContractTemplateList.push({   
+            contractTemplateId: row.templateId || '',
+            scope: row.scope || '',
+            scopeDesc: selectedDimension?.label || '',
+          })
+        }
       })
 
       if(signatureSubjectRows.length) {
         signatureSubjectRows.forEach((row: any) => {
           let selectedRole = roleOptions.find((item: any) => item.value == row.roleId);
           let selectedMerchant = merchantOptions.find((item: any) => item.value == row.merchantId);
-          fixedSignerList.push({  
-            signerRole: row.roleId  || '',
-            signerRoleDesc: selectedRole?.label || '',
-            vendorId: row.merchantId || '',
-            vendorName: selectedMerchant?.label || '',
-          })
+           if(isEdit) {
+              fixedSignerList.push({  
+              signerRole: row.roleId  || '',
+              signerRoleDesc: selectedRole?.label || '',
+              vendorId: row.merchantId || '',
+              vendorName: selectedMerchant?.label || '',
+              id: row.key
+            })
+           } else {
+            fixedSignerList.push({  
+              signerRole: row.roleId  || '',
+              signerRoleDesc: selectedRole?.label || '',
+              vendorId: row.merchantId || '',
+              vendorName: selectedMerchant?.label || '',
+            })
+           }
+          
         })
       }
-      const res = await SaveBusinessConfigApi({
-        // id: currentRecord?.id,
+      let params:any = {
         name: values.name,
         capitalId: values.capitalId,
         bizCategory: values.bizCategory,
@@ -614,10 +631,15 @@ const BusinessConfig: React.FC = () => {
         rate: values.rate,
         configContractTemplateList:configContractTemplateList,
         fixedSignerList:fixedSignerList
-      });
+      }
+      if(isEdit) {
+        params.id = currentRecord?.id
+      }
+      const res = await SaveBusinessConfigApi(params);
       console.log('....保存业务配置', res);
 
       message.success(isEdit ? '修改成功' : '新增成功');
+      fetchData();
       setIsModalVisible(false);
       modalForm.resetFields();
       setContractRows([]);
