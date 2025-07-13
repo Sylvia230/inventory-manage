@@ -3,7 +3,7 @@ import { StaffData } from './staff'
 
 export interface RoleData {
   id: string
-  name: string
+  roleName: string
   description: string
   staffIds: string[]
   staffList: StaffData[]
@@ -13,27 +13,27 @@ export interface RoleData {
 }
 
 export interface RoleQuery {
-  name?: string
+  roleName?: string
   page?: number
   pageSize?: number
 }
 
 // 获取角色列表
-export function getRoleList(data: any) {
-	return axios.get<unknown, any>('/role/list', data).then(res => res.data);
+export function getRoleList(params: RoleQuery): Promise<any> {
+	return axios.post('/userRole/pageQuery', params).then(res => res);
 }
 
 // 新增角色
-export async function addRole(data: any) {
-  return axios.post<RoleData>('/role/add', data)
-}
-
-// 编辑角色
-export async function updateRole(data: RoleData) {
-  return axios.post<RoleData>('/role/update', data)
+export async function saveRole(data: any) {
+  return axios.post('/userRole/saveUserRole', data)
 }
 
 // 删除角色
-export async function deleteRole(data:any) {
-  return axios.post<void>('/role/delete', data)
-} 
+export async function deleteRole(id: string) {
+  return axios.post<void>('/userRole/removeUserRole?id='+id)
+}
+
+// 分配角色给用户
+export async function allocationUser(data: any) {
+  return axios.post('/userRole/allocationUser', data)
+}

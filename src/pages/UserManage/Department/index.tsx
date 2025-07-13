@@ -1,84 +1,112 @@
-import React, { useState } from 'react'
-import { Table, Space, Button, Input, Tag, Modal, Form, message } from 'antd'
+import React, {useEffect, useState} from 'react'
+import {Table, Space, Button, Input, Tag, Modal, Form, message, Select} from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { SearchOutlined } from '@ant-design/icons'
 import styles from './index.module.css'
+import {DeptData,getDeptList,saveDept,deleteDept,getStaffList } from '@/services/dept'
 
-interface DepartmentData {
-  id: string
-  name: string
-  phone: string
-  department: string
-  position: string
-}
 
 const DepartmentManage: React.FC = () => {
   const [loading, setLoading] = useState(false)
+  const [loadingStaff, setLoadingStaff] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [editModalVisible, setEditModalVisible] = useState(false)
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
-  const [currentRecord, setCurrentRecord] = useState<DepartmentData | null>(null)
+  const [currentRecord, setCurrentRecord] = useState<DeptData | null>(null)
   const [form] = Form.useForm()
 
-  // 模拟数据
-  const mockData: DepartmentData[] = [
-    {
-      id: '1',
-      name: '张三',
-      phone: '13800138000',
-      department: '技术部',
-      position: '前端开发'
-    },
-    {
-      id: '2',
-      name: '李四',
-      phone: '13800138001',
-      department: '技术部',
-      position: '后端开发'
-    },
-    {
-      id: '3',
-      name: '王五',
-      phone: '13800138002',
-      department: '市场部',
-      position: '市场专员'
-    },
-    {
-      id: '4',
-      name: '赵六',
-      phone: '13800138003',
-      department: '人事部',
-      position: 'HR专员'
-    }
-  ]
+  const [staffList, setStaffList] = useState<Array<{value: string, name: string}>>([])
+  const [modalType, setModalType] = useState<'add' | 'edit'>('add')
+  const [dataSource, setDataSource] = useState<DeptData[]>([])
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  })
 
-  const columns: ColumnsType<DepartmentData> = [
+  useEffect(() => {
+    fetchDeptList();
+    getStaff();
+  }, [pagination.current, pagination.pageSize])
+
+  // 获取部门列表
+  const fetchDeptList = async (params?: any, paginationParams?: any) => {
+    try {
+      setLoading(true);
+      const currentPagination = paginationParams || pagination;
+      const searchParams = {
+        ...params,
+        pageNo: currentPagination.current,
+        pageSize: currentPagination.pageSize,
+      };
+      const response:any = await getDeptList(searchParams);
+      setDataSource(response.result || []);
+      setPagination(prev => ({
+        ...prev,
+        total: response.totalCount || 0
+      }));
+    } catch (error) {
+      console.error('获取部门列表失败:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 获取用户数据
+  const getStaff = async (params = {"pageSize":1000}) => {
+    setLoadingStaff(true);
+    try {
+      const res = await getStaffList(params);
+      console.log(res, 'response');
+      // API返回的数据结构应该是一个数组，包含 {id, name} 或 {value, label} 格式
+      setStaffList(res || []);
+    } catch (error) {
+      console.error('获取用户数据失败:', error);
+      message.error('获取用户数据失败');
+    } finally {
+      setLoadingStaff(false);
+    }
+  };
+
+  const handleAdd = () => {
+    setModalType('add')
+    setCurrentRecord(null)
+    setEditModalVisible(true)
+    form.resetFields()
+  }
+
+  const handleTableChange = (newPagination: any) => {
+    setPagination(newPagination)
+  }
+
+  const columns: ColumnsType<DeptData> = [
     {
-      title: '姓名',
-      dataIndex: 'name',
-      key: 'name',
+      title: '部门名称',
+      dataIndex: 'deptName',
+      key: 'deptName',
       width: 120,
     },
     {
-      title: '手机号',
-      dataIndex: 'phone',
-      key: 'phone',
+      title: '部门负责人',
+      dataIndex: 'leaderName',
+      key: 'leaderName',
       width: 150,
     },
     {
-      title: '部门',
-      dataIndex: 'department',
-      key: 'department',
+      title: '负责人电话',
+      dataIndex: 'leaderPhone',
+      key: 'leaderPhone',
       width: 150,
-      render: (department: string) => (
-        <Tag color="blue">{department}</Tag>
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      render: (status: number) => (
+          <Tag color={status === 1 ? 'green' : 'red'}>
+            {status === 1 ? '启用' : '弃用'}
+          </Tag>
       ),
-    },
-    {
-      title: '岗位',
-      dataIndex: 'position',
-      key: 'position',
-      width: 150,
     },
     {
       title: '操作',
@@ -97,76 +125,89 @@ const DepartmentManage: React.FC = () => {
     },
   ]
 
-  const handleEdit = (record: DepartmentData) => {
+  const handleEdit = (record: DeptData) => {
     setCurrentRecord(record)
+    setModalType('edit')
     form.setFieldsValue(record)
     setEditModalVisible(true)
   }
 
-  const handleDelete = (record: DepartmentData) => {
-    setCurrentRecord(record)
-    setDeleteModalVisible(true)
+  const handleDelete = (record: DeptData) => {
+    Modal.confirm({
+      title: '确认删除',
+      content: `确定要删除部门 ${record.deptName} 吗？`,
+      okText: '确认',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          setLoading(true)
+          await deleteDept(record.id)
+          message.success('删除成功')
+          fetchDeptList()
+        } catch (error) {
+          console.error('删除失败:', error)
+        } finally {
+          setLoading(false)
+        }
+      }
+    })
   }
 
   const handleEditSubmit = async () => {
     try {
-      const values = await form.validateFields()
-      // TODO: 调用修改API
+      let values = await form.validateFields()
+      if (modalType === 'add') {
+
+      } else {
+        values = { ...currentRecord, ...values }
+      }
+      await saveDept(values)
       console.log('修改数据:', values)
-      message.success('修改成功')
+      message.success('保存成功')
       setEditModalVisible(false)
+      form.resetFields()
+      fetchDeptList()
     } catch (error) {
       console.error('表单验证失败:', error)
-    }
-  }
-
-  const handleDeleteConfirm = async () => {
-    try {
-      // TODO: 调用删除API
-      console.log('删除数据:', currentRecord)
-      message.success('删除成功')
-      setDeleteModalVisible(false)
-    } catch (error) {
-      message.error('删除失败')
+      message.error('保存失败')
     }
   }
 
   const handleSearch = (value: string) => {
     setSearchText(value)
-    // TODO: 实现搜索逻辑
+    fetchDeptList({ deptName: value })
   }
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <Input
-          placeholder="搜索姓名/手机号"
+          placeholder="搜索名称"
           prefix={<SearchOutlined />}
           onChange={(e) => handleSearch(e.target.value)}
           style={{ width: 200 }}
         />
         <Space>
-          <Button type="primary">新增部门</Button>
-          <Button>新增岗位</Button>
+          <Button type="primary" onClick={handleAdd}>新增部门</Button>
         </Space>
       </div>
       <Table
         columns={columns}
-        dataSource={mockData}
+        dataSource={dataSource}
         loading={loading}
         rowKey="id"
         pagination={{
-          total: mockData.length,
-          pageSize: 10,
+          ...pagination,
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total) => `共 ${total} 条`
         }}
+        onChange={handleTableChange}
       />
 
       {/* 编辑弹窗 */}
       <Modal
-        title="编辑信息"
+          title={modalType === 'add' ? '新增部门' : '编辑部门'}
         open={editModalVisible}
         onOk={handleEditSubmit}
         onCancel={() => setEditModalVisible(false)}
@@ -175,50 +216,42 @@ const DepartmentManage: React.FC = () => {
         <Form
           form={form}
           layout="vertical"
-          initialValues={currentRecord || {}}
         >
           <Form.Item
-            name="name"
-            label="姓名"
-            rules={[{ required: true, message: '请输入姓名' }]}
+            name="deptName"
+            label="名称"
+            rules={[{ required: true, message: '请输入名称' }]}
           >
-            <Input placeholder="请输入姓名" />
+            <Input placeholder="请输入名称" />
           </Form.Item>
           <Form.Item
-            name="phone"
-            label="手机号"
-            rules={[
-              { required: true, message: '请输入手机号' },
-              { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' }
-            ]}
+              name="leaderId"
+              label="部门负责人"
+              rules={[{ required: true, message: '请选择部门负责人' }]}
           >
-            <Input placeholder="请输入手机号" maxLength={11} />
+            <Select
+                loading={loadingStaff}
+                placeholder="请选择部门负责人"
+                options={staffList.map((item:any) => ({
+                  label:item.personName,
+                  value:item.id
+                }))}
+            />
           </Form.Item>
           <Form.Item
-            name="department"
-            label="部门"
-            rules={[{ required: true, message: '请输入部门' }]}
+              name="status"
+              label="状态"
+              initialValue={1}
+              rules={[{ required: true, message: '请选择状态' }]}
           >
-            <Input placeholder="请输入部门" />
-          </Form.Item>
-          <Form.Item
-            name="position"
-            label="岗位"
-            rules={[{ required: true, message: '请输入岗位' }]}
-          >
-            <Input placeholder="请输入岗位" />
+            <Select
+                options={[
+                  { label: '启用', value: 1 },
+                  { label: '弃用', value: 0 }
+                ]}
+            />
           </Form.Item>
         </Form>
-      </Modal>
-
-      {/* 删除确认弹窗 */}
-      <Modal
-        title="删除确认"
-        open={deleteModalVisible}
-        onOk={handleDeleteConfirm}
-        onCancel={() => setDeleteModalVisible(false)}
-      >
-        <p>确定要删除 {currentRecord?.name} 的信息吗？</p>
       </Modal>
     </div>
   )

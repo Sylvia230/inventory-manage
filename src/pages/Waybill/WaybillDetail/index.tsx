@@ -398,6 +398,7 @@ const WaybillDetail: React.FC = () => {
         vin: value.vin,
         odometer: value.odometer,
         tmsWaybillNo: detailData?.waybillNo,
+        tmsWaybillId: detailData?.id,
         productionDate: dayjs(value.productionDate).format('YYYY-MM-DD'),
         isQualityDamage: value.isQualityDamage ? 1 : 0,
         qualityDamageImgUrlList: qualityDamageImgUrlList,

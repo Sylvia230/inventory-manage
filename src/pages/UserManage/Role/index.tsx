@@ -3,79 +3,9 @@ import { Table, Button, Modal, Form, Input, Select, Space, message, Tree } from 
 import type { ColumnsType } from 'antd/es/table'
 import type { DataNode } from 'antd/es/tree'
 import styles from './index.module.css'
-import { getStaffList } from '@/services/staff'
-import { StaffData } from '@/services/staff'
-import { RoleData, getRoleList, addRole, updateRole, deleteRole } from '@/services/role'
-
-// 模拟菜单权限数据
-const menuPermissions: DataNode[] = [
-  {
-    title: '系统管理',
-    key: 'system',
-    children: [
-      {
-        title: '用户管理',
-        key: 'system:user',
-        children: [
-          { title: '查看用户', key: 'system:user:view' },
-          { title: '新增用户', key: 'system:user:add' },
-          { title: '编辑用户', key: 'system:user:edit' },
-          { title: '删除用户', key: 'system:user:delete' },
-        ],
-      },
-      {
-        title: '角色管理',
-        key: 'system:role',
-        children: [
-          { title: '查看角色', key: 'system:role:view' },
-          { title: '新增角色', key: 'system:role:add' },
-          { title: '编辑角色', key: 'system:role:edit' },
-          { title: '删除角色', key: 'system:role:delete' },
-        ],
-      },
-    ],
-  },
-  {
-    title: '订单管理',
-    key: 'order',
-    children: [
-      {
-        title: '订单列表',
-        key: 'order:list',
-        children: [
-          { title: '查看订单', key: 'order:list:view' },
-          { title: '新增订单', key: 'order:list:add' },
-          { title: '编辑订单', key: 'order:list:edit' },
-          { title: '删除订单', key: 'order:list:delete' },
-        ],
-      },
-      {
-        title: '订单审核',
-        key: 'order:audit',
-        children: [
-          { title: '查看审核', key: 'order:audit:view' },
-          { title: '审核操作', key: 'order:audit:action' },
-        ],
-      },
-    ],
-  },
-  {
-    title: '车辆管理',
-    key: 'vehicle',
-    children: [
-      {
-        title: '车辆列表',
-        key: 'vehicle:list',
-        children: [
-          { title: '查看车辆', key: 'vehicle:list:view' },
-          { title: '新增车辆', key: 'vehicle:list:add' },
-          { title: '编辑车辆', key: 'vehicle:list:edit' },
-          { title: '删除车辆', key: 'vehicle:list:delete' },
-        ],
-      },
-    ],
-  },
-]
+import { RoleData, getRoleList,  saveRole, deleteRole } from '@/services/role'
+import {StaffData} from "@/services/staff.ts";
+import {getStaffList } from '@/services/dept'
 
 // 模拟员工数据
 const mockStaffList: StaffData[] = [
@@ -198,46 +128,51 @@ const RoleManage: React.FC = () => {
     total: 0,
   })
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
+  const [loadingStaff, setLoadingStaff] = useState(false)
 
-  // 获取员工列表
-  const fetchStaffList = async () => {
-    try {
-        // const { data } = await getStaffList({})
-        // setStaffList(data)
-      // 使用模拟数据
-      setStaffList(mockStaffList)
-    } catch (error) {
-      console.error('获取员工列表失败:', error)
-    }
-  }
+  useEffect(() => {
+    fetchRoleList();
+    getStaff();
+  }, [pagination.current, pagination.pageSize])
 
-  // 获取角色列表
-  const fetchRoleList = async (params = {}) => {
+  // 获取橘色列表
+  const fetchRoleList = async (params?: any, paginationParams?: any) => {
     try {
-      setLoading(true)
-    //   const { data, total } = await getRoleList({
-    //     page: pagination.current,
-    //     pageSize: pagination.pageSize,
-    //     ...params,
-    //   })
-    //   setDataSource(data)
-      // 使用模拟数据
-      setDataSource(mockRoles)
+      setLoading(true);
+      const currentPagination = paginationParams || pagination;
+      const searchParams = {
+        ...params,
+        pageNo: currentPagination.current,
+        pageSize: currentPagination.pageSize,
+      };
+      const response:any = await getRoleList(searchParams);
+      setDataSource(response.result || []);
       setPagination(prev => ({
         ...prev,
-        total: mockRoles.length,
-      }))
+        total: response.totalCount || 0
+      }));
     } catch (error) {
-      console.error('获取角色列表失败:', error)
+      console.error('获取部门列表失败:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => {
-    fetchRoleList()
-    fetchStaffList()
-  }, [pagination.current, pagination.pageSize])
+  // 获取用户数据
+  const getStaff = async (params = {"pageSize":1000}) => {
+    setLoadingStaff(true);
+    try {
+      const res = await getStaffList(params);
+      console.log(res, 'response');
+      // API返回的数据结构应该是一个数组，包含 {id, name} 或 {value, label} 格式
+      setStaffList(res || []);
+    } catch (error) {
+      console.error('获取用户数据失败:', error);
+      message.error('获取用户数据失败');
+    } finally {
+      setLoadingStaff(false);
+    }
+  };
 
   const handleTableChange = (newPagination: any) => {
     setPagination(newPagination)
@@ -246,31 +181,33 @@ const RoleManage: React.FC = () => {
   const columns: ColumnsType<RoleData> = [
     {
       title: '角色名称',
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: 'roleName',
+      key: 'roleName',
       width: 150,
     },
     {
       title: '已选员工',
-      dataIndex: 'staffList',
-      key: 'staffList',
+      dataIndex: 'userInfoDTOList',
+      key: 'userInfoDTOList',
       width: 200,
-      render: (staffList: StaffData[]) => (
-        <span>
-          {staffList.map(staff => staff.name).join(', ')}
-        </span>
+      render: (userList: StaffData[] | null | undefined) => (
+          <span>
+          {userList
+        ? userList.map(staff => staff.personName).join(', ')
+        : '未选择员工'}
+      </span>
       ),
     },
     {
-      title: '创建时间',
-      dataIndex: 'createTime',
-      key: 'createTime',
+      title: '描述',
+      dataIndex: 'description',
+      key: 'description',
       width: 180,
     },
     {
-      title: '更新时间',
-      dataIndex: 'updateTime',
-      key: 'updateTime',
+      title: '创建时间',
+      dataIndex: 'createTimeStr',
+      key: 'createTimeStr',
       width: 180,
     },
     {
@@ -279,6 +216,9 @@ const RoleManage: React.FC = () => {
       width: 150,
       render: (_, record) => (
         <Space size="middle">
+          <Button type="link">
+            分配权限
+          </Button>
           <Button type="link" onClick={() => handleEdit(record)}>
             编辑
           </Button>
@@ -331,25 +271,26 @@ const RoleManage: React.FC = () => {
 
   const handleModalSubmit = async () => {
     try {
-      const values = await form.validateFields()
+      let values = await form.validateFields()
       const submitData = {
         ...values,
         permissions: selectedPermissions,
       }
       
       if (modalType === 'add') {
-        await addRole(submitData)
-        message.success('新增成功')
+
       } else {
-        await updateRole({ ...currentRecord, ...submitData } as RoleData)
-        message.success('编辑成功')
+        values = ({ ...currentRecord, ...submitData } as RoleData)
       }
+      await saveRole(values)
+      message.success('保存成功')
       setModalVisible(false)
       form.resetFields()
       setSelectedPermissions([])
       fetchRoleList()
     } catch (error) {
       console.error('表单提交失败:', error)
+      message.error('保存失败')
     }
   }
 
@@ -394,42 +335,49 @@ const RoleManage: React.FC = () => {
           layout="vertical"
         >
           <Form.Item
-            name="name"
+            name="roleName"
             label="角色名称"
             rules={[{ required: true, message: '请输入角色名称' }]}
           >
             <Input placeholder="请输入角色名称" />
           </Form.Item>
           <Form.Item
-            name="staffIds"
+              name="description"
+              label="描述"
+              rules={[{ required: true, message: '请输入描述' }]}
+          >
+            <Input placeholder="请输入描述" />
+          </Form.Item>
+          <Form.Item
+            name="userIds"
             label="选择员工"
-            rules={[{ required: true, message: '请选择员工' }]}
+            rules={[{ required: false, message: '请选择员工' }]}
           >
             <Select
               mode="multiple"
               placeholder="请选择员工"
               style={{ width: '100%' }}
               options={staffList.map(staff => ({
-                label: staff.name,
+                label: staff.personName,
                 value: staff.id,
               }))}
             />
           </Form.Item>
-          <Form.Item
-            label="菜单权限"
-            required
-            tooltip="请选择该角色可以访问的菜单和操作权限"
-          >
-            <Tree
-              checkable
-              defaultExpandAll
-              checkedKeys={selectedPermissions}
-              onCheck={onCheck}
-              treeData={menuPermissions}
-              height={400}
-              style={{ border: '1px solid #d9d9d9', padding: '8px', borderRadius: '4px' }}
-            />
-          </Form.Item>
+          {/*<Form.Item*/}
+          {/*  label="菜单权限"*/}
+          {/*  required*/}
+          {/*  tooltip="请选择该角色可以访问的菜单和操作权限"*/}
+          {/*>*/}
+          {/*  <Tree*/}
+          {/*    checkable*/}
+          {/*    defaultExpandAll*/}
+          {/*    checkedKeys={selectedPermissions}*/}
+          {/*    onCheck={onCheck}*/}
+          {/*    treeData={menuPermissions}*/}
+          {/*    height={400}*/}
+          {/*    style={{ border: '1px solid #d9d9d9', padding: '8px', borderRadius: '4px' }}*/}
+          {/*  />*/}
+          {/*</Form.Item>*/}
         </Form>
       </Modal>
     </div>

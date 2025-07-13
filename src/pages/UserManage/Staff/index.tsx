@@ -3,24 +3,19 @@ import { Table, Tag, Space, Button, Input, Modal, Form, Select, message } from '
 import type { ColumnsType } from 'antd/es/table'
 import { SearchOutlined } from '@ant-design/icons'
 import styles from './index.module.css'
-import { StaffData, getStaffList, addStaff, updateStaff, deleteStaff } from '@/services/staff'
+import {
+  StaffData,
+  getStaffUserList,
+  addStaff,
+  updateStaff,
+  deleteStaff,
+  resetStaffPassword,
+  getDeptList,
+  getRoleList,
+  Role
+} from '@/services/staff'
 import ResetPasswordModal from './components/ResetPasswordModal';
 
-// 模拟部门和角色数据
-const departments = [
-  { label: '技术部', value: '技术部' },
-  { label: '市场部', value: '市场部' },
-  { label: '人事部', value: '人事部' },
-  { label: '财务部', value: '财务部' },
-]
-
-const roles = [
-  { label: '开发工程师', value: '开发工程师' },
-  { label: '产品经理', value: '产品经理' },
-  { label: '市场经理', value: '市场经理' },
-  { label: 'HR专员', value: 'HR专员' },
-  { label: '财务专员', value: '财务专员' },
-]
 
 const StaffManage: React.FC = () => {
   const [loading, setLoading] = useState(false)
@@ -37,48 +32,61 @@ const StaffManage: React.FC = () => {
   })
   const [resetModalVisible, setResetModalVisible] = useState(false);
   const [currentStaff, setCurrentStaff] = useState<StaffData | null>(null);
-// 模拟数据
-const mockData: StaffData[] = [
-    {
-      id: '1',
-      name: '张三',
-      phone: '13800138000',
-      department: '技术部',
-      role: '开发工程师',
-      status: 'active'
-    },
-    {
-      id: '2',
-      name: '李四',
-      phone: '13800138001',
-      department: '市场部',
-      role: '市场经理',
-      status: 'active'
-    },
-    {
-      id: '3',
-      name: '王五',
-      phone: '13800138002',
-      department: '人事部',
-      role: 'HR专员',
-      status: 'inactive'
-    }
-  ]
-  // 获取员工列表
-  const fetchStaffList = async (params = {}) => {
+
+  //获取部门、角色
+  const [depts, setDepts] = useState<Array<{value: string, name: string}>>([]);
+  const [loadingDepts, setLoadingDepts] = useState(false);
+  const [roles, setRoles] = useState<Array<{value: string, name: string}>>([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
+
+  // 获取部门数据
+  const getDepts = async () => {
+    setLoadingDepts(true);
     try {
-      setLoading(true)
-    //   const { data, total } = await getStaffList({
-    //     page: pagination.current,
-    //     pageSize: pagination.pageSize,
-    //     ...params,
-    //   })
-    //   setDataSource(data)
-    setDataSource(mockData)
+      const res = await getDeptList();
+      console.log(res, 'response');
+      // API返回的数据结构应该是一个数组，包含 {id, name} 或 {value, label} 格式
+      setDepts(res || []);
+    } catch (error) {
+      console.error('获取部门数据失败:', error);
+      message.error('获取部门数据失败');
+    } finally {
+      setLoadingDepts(false);
+    }
+  };
+
+  // 获取角色数据
+  const getRoles = async (params = {"pageSize":1000}) => {
+    setLoadingRoles(true);
+    try {
+      const res = await getRoleList(params);
+      console.log(res, 'response');
+      // API返回的数据结构应该是一个数组，包含 {id, name} 或 {value, label} 格式
+      setRoles(res || []);
+    } catch (error) {
+      console.error('获取角色数据失败:', error);
+      message.error('获取角色数据失败');
+    } finally {
+      setLoadingRoles(false);
+    }
+  };
+
+  // 获取员工列表
+  const fetchStaffList = async (params?: any, paginationParams?: any) => {
+    try {
+      setLoading(true);
+      const currentPagination = paginationParams || pagination;
+      const searchParams = {
+        ...params,
+        pageNo: currentPagination.current,
+        pageSize: currentPagination.pageSize,
+      };
+      const response:any = await getStaffUserList(searchParams);
+      setDataSource(response.result || []);
       setPagination(prev => ({
         ...prev,
-        total: mockData.length,
-      }))
+        total: response.totalCount || 0
+      }));
     } catch (error) {
       console.error('获取员工列表失败:', error)
     } finally {
@@ -87,7 +95,9 @@ const mockData: StaffData[] = [
   }
 
   useEffect(() => {
-    fetchStaffList()
+    fetchStaffList();
+    getDepts();
+    getRoles();
   }, [pagination.current, pagination.pageSize])
 
   const handleTableChange = (newPagination: any) => {
@@ -96,7 +106,7 @@ const mockData: StaffData[] = [
 
   const handleSearch = (value: string) => {
     setSearchText(value)
-    fetchStaffList({ name: value, phone: value })
+    fetchStaffList({ nameOrMobilePhone: value})
   }
 
   const handleAdd = () => {
@@ -116,7 +126,7 @@ const mockData: StaffData[] = [
   const handleDelete = (record: StaffData) => {
     Modal.confirm({
       title: '确认删除',
-      content: `确定要删除员工 ${record.name} 吗？`,
+      content: `确定要删除员工 ${record.personName} 吗？`,
       okText: '确认',
       cancelText: '取消',
       onOk: async () => {
@@ -149,42 +159,50 @@ const mockData: StaffData[] = [
       fetchStaffList()
     } catch (error) {
       console.error('表单提交失败:', error)
+      message.error('新增员工失败')
     }
   }
 
   const columns: ColumnsType<StaffData> = [
     {
       title: '姓名',
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: 'personName',
+      key: 'personName',
       width: 120,
     },
     {
       title: '手机号',
-      dataIndex: 'phone',
-      key: 'phone',
+      dataIndex: 'mobilePhone',
+      key: 'mobilePhone',
       width: 150,
     },
     {
       title: '部门',
-      dataIndex: 'department',
-      key: 'department',
+      dataIndex: 'deptName',
+      key: 'deptName',
       width: 150,
     },
     {
       title: '角色',
-      dataIndex: 'role',
-      key: 'role',
-      width: 150,
+      dataIndex: 'roleDTOS',
+      key: 'roleDTOS',
+      width: 200,
+      render: (roleList: Role[] | null | undefined) => (
+          <span>
+          {roleList
+              ? roleList.map(role => role.roleName).join(', ')
+              : ''}
+      </span>
+      ),
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status: string) => (
-        <Tag color={status === 'active' ? 'green' : 'red'}>
-          {status === 'active' ? '在职' : '离职'}
+      render: (status: number) => (
+        <Tag color={status === 1 ? 'green' : 'red'}>
+          {status === 1 ? '在职' : '离职'}
         </Tag>
       ),
     },
@@ -221,8 +239,8 @@ const mockData: StaffData[] = [
     try {
       setLoading(true);
       await resetStaffPassword({
-        staffId: currentStaff.id,
-        newPassword: values.password,
+        id: currentStaff.id,
+        pwd: values.password,
       });
       message.success('密码重置成功');
       setResetModalVisible(false);
@@ -274,14 +292,14 @@ const mockData: StaffData[] = [
           layout="vertical"
         >
           <Form.Item
-            name="name"
+            name="personName"
             label="姓名"
             rules={[{ required: true, message: '请输入姓名' }]}
           >
             <Input placeholder="请输入姓名" />
           </Form.Item>
           <Form.Item
-            name="phone"
+            name="mobilePhone"
             label="手机号"
             rules={[
               { required: true, message: '请输入手机号' },
@@ -291,35 +309,44 @@ const mockData: StaffData[] = [
             <Input placeholder="请输入手机号" maxLength={11} />
           </Form.Item>
           <Form.Item
-            name="department"
-            label="部门"
-            rules={[{ required: true, message: '请选择部门' }]}
+              name="deptId"
+              label="部门"
+              rules={[{ required: false, message: '请选择部门' }]}
           >
             <Select
-              placeholder="请选择部门"
-              options={departments}
+                loading={loadingDepts}
+                placeholder="请选择部门"
+                options={depts.map((item:any) => ({
+                  label:item.deptName,
+                  value:item.id
+                }))}
             />
           </Form.Item>
           <Form.Item
-            name="role"
-            label="角色"
-            rules={[{ required: true, message: '请选择角色' }]}
+              name="roleIds"
+              label="角色"
+              rules={[{ required: false, message: '请选择角色' }]}
           >
             <Select
-              placeholder="请选择角色"
-              options={roles}
+                loading={loadingRoles}
+                mode="multiple"
+                placeholder="请选择角色"
+                options={roles.map((item:any) => ({
+                  label:item.roleName,
+                  value:item.id
+                }))}
             />
           </Form.Item>
           <Form.Item
             name="status"
             label="状态"
-            initialValue="active"
+            initialValue={1}
             rules={[{ required: true, message: '请选择状态' }]}
           >
             <Select
               options={[
-                { label: '在职', value: 'active' },
-                { label: '离职', value: 'inactive' }
+                { label: '在职', value: 1 },
+                { label: '离职', value: 0 }
               ]}
             />
           </Form.Item>

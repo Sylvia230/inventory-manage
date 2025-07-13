@@ -1,13 +1,15 @@
-import { data } from "react-router-dom";
-import { yApiRequest as axios } from "./index";
+// import { data } from "react-router-dom";
+import { yApiRequest } from '@/services';
+import type { ResponseData } from '@/services/typings';
 
 export interface StaffData {
   id: string
-  name: string
-  phone: string
-  department: string
-  role: string
-  status: 'active' | 'inactive'
+  personName: string,
+  mobilePhone: string,
+  deptName: string,
+  roles: string,
+  status: number,
+  statusDesc: string
 }
 
 export interface StaffQuery {
@@ -17,38 +19,99 @@ export interface StaffQuery {
   pageSize?: number
 }
 
-// 获取员工列表
-export async function getStaffList(params: any) {
-  return axios.get<{
-    data: StaffData[]
-    total: number
-  }>('/staff/list', params)
+// 用户查询参数
+export interface UserStaffQueryParams {
+  nameOrMobilePhone?: string;
+  page?: number;
+  pageSize?: number;
 }
+
+// 用户查询参数
+export interface UserRoleQueryParams {
+  page?: number;
+  pageSize?: number;
+}
+
+// 用户记录接口
+export interface UserStaffRecord {
+  id: string;
+  personName: string;
+  mobilePhone: string;
+  deptName: string;
+  roles: string;
+  status: number;
+  statusDesc: string;
+}
+
+// 部门记录接口
+export interface DeptRecord {
+  id: string;
+  deptName: string;
+  leaderId: string;
+  leaderName: string;
+}
+
+// 用户详情接口
+export interface UserStaffDetail {
+  id:String;
+  personName: string;
+  mobilePhone: string;
+  deptId: string;
+  deptName: string;
+  roleDTOS:Role[],
+  roles: string;
+}
+
+export interface Role {
+  id: string;
+  roleName: string;
+}
+
+// 获取用户列表
+export const getStaffUserList = async (params: UserStaffQueryParams): Promise<ResponseData<{
+  list: UserStaffRecord[];
+  total: number;
+}>> => {
+  return yApiRequest.post('/userStaff/pageQuery', params).then(res => res);
+};
+
+// 获取部门列表
+export const getDeptList = async (): Promise<any> => {
+  return yApiRequest.get('/userDept/getDeptList').then(res => res.result);
+};
+
+// 获取角色列表
+export const getRoleList = async (params: UserRoleQueryParams): Promise<any> => {
+  return yApiRequest.post('/userRole/pageQuery',params).then(res => res.result);
+};
 
 // 新增员工
-export async function addStaff(data: any) {
-  return axios.post<StaffData>('/staff/add',data)
-}
-
+export const addStaff = async (data: Partial<UserStaffDetail>): Promise<ResponseData<any>> => {
+  return yApiRequest.post('/userStaff/saveUser', data).then(res => res);
+};
+//
 // 编辑员工
-export async function updateStaff(data: StaffData) {
-  return axios.post<StaffData>('/staff/update', data)
-}
-
+export const updateStaff = async (data: Partial<UserStaffDetail>): Promise<ResponseData<any>> => {
+  return yApiRequest.post('/userStaff/saveUser', data);
+};
+//
 // 删除员工
-export async function deleteStaff(data: any) {
-  return axios.post<void>('/staff/delete', data)
-}
+export const deleteStaff = async (id: string): Promise<ResponseData<void>> => {
+  return yApiRequest.post('/userStaff/removeUser?id='+id);
+};
 
+//重置密码
 interface ResetPasswordParams {
-  staffId: string;
-  newPassword: string;
+  id: string;
+  pwd: string;
 }
-
+//
 /**
  * 重置员工密码
  * @param params 重置密码参数
  */
-export async function resetStaffPassword(params: ResetPasswordParams) {
-  return axios.post('/staff/reset-password',params );
-} 
+
+//重置密码
+export const resetStaffPassword = async (params: ResetPasswordParams): Promise<ResponseData<void>> => {
+  return yApiRequest.post('/userStaff/resetPsw',params);
+}

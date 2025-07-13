@@ -56,6 +56,7 @@ export interface WaybillRecord {
 // 运单详情接口
 export interface WaybillDetailData {
   // 运单基本信息
+  id: string;
   waybillNo: string;
   status: 'pending' | 'in_transit' | 'delivered' | 'cancelled';
   statusDesc: string;
