@@ -44,6 +44,7 @@ const PriceCheckDetail =  lazy(() => import('../pages/TaskCenter/PriceCheck/Pric
 const PreSaleLetter = lazy(() => import('../pages/PreSaleLetter'));
 const BlackListManage = lazy(() => import('../pages/MerchantManage/BlackList'));
 const MerchantList = lazy(() => import('../pages/MerchantManage/MerchantList'));
+const CreditLimit = lazy(() => import('../pages/MerchantManage/CreditLimit'));
 const PushToInvestor = lazy(() => import('../pages/TaskCenter/PushToInvestor'));
 const WarehouseList = lazy(() => import('../pages/WareHouse/WarehouseList/index'));
 const VehicleListInStock = lazy(() => import('../pages/WareHouse/VehicleList/index'));
@@ -207,9 +208,9 @@ const menuRoutes: MenuRoute[] = [
             element: <MerchantList />
           },
           {
-            name: '授信额度管理', // todo (列表展示：参考商家列表、产品类型、资方名称、授信额度、已用额度、状态)
-            path: '/merchant/list',
-            element: <MerchantList />
+            name: '授信额度管理',
+            path: '/merchant/creditLimit',
+            element: <CreditLimit />
           },
           {
             name: '黑名单管理',

@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, Button, Form, Input, Select, Space, Row, Col, DatePicker, Modal, Cascader, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import styles from './index.module.less';
 import { SearchOutlined, ReloadOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { getBankCardListApi } from '@/services/finance';
+import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
 
@@ -29,6 +31,11 @@ const BankCard: React.FC = () => {
   const [currentRecord, setCurrentRecord] = useState<BankCardRecord | null>(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<BankCardRecord | null>(null);
+  
+  // 分页相关状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   // 证件类型选项
   const idTypeOptions = [
@@ -80,18 +87,18 @@ const BankCard: React.FC = () => {
     },
     {
       title: '卡号',
-      dataIndex: 'cardNumber',
+      dataIndex: 'bankAccount',
       width: 180,
-      render: (text: string) => {
-        // 只显示后四位，其他用*代替
-        const lastFour = text.slice(-4);
-        const masked = '*'.repeat(text.length - 4);
-        return `${masked}${lastFour}`;
-      },
+      // render: (text: string) => {
+      //   // 只显示后四位，其他用*代替
+      //   const lastFour = text.slice(-4);
+      //   const masked = '*'.repeat(text.length - 4);
+      //   return `${masked}${lastFour}`;
+      // },
     },
     {
       title: '开户行',
-      dataIndex: 'bankName',
+      dataIndex: 'bankBranchName',
       width: 150,
     },
     {
@@ -103,19 +110,19 @@ const BankCard: React.FC = () => {
       title: '绑定手机号',
       dataIndex: 'phone',
       width: 150,
-      render: (text: string) => {
-        // 手机号中间四位用*代替
-        return text.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
-      },
+      // render: (text: string) => {
+      //   // 手机号中间四位用*代替
+      //   return text.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+      // },
     },
     {
       title: '证件号',
       dataIndex: 'idNumber',
       width: 180,
-      render: (text: string) => {
-        // 身份证号中间用*代替
-        return text.replace(/(\d{4})\d{10}(\d{4})/, '$1**********$2');
-      },
+      // render: (text: string) => {
+      //   // 身份证号中间用*代替
+      //   return text.replace(/(\d{4})\d{10}(\d{4})/, '$1**********$2');
+      // },
     },
     {
       title: '归属方',
@@ -126,6 +133,9 @@ const BankCard: React.FC = () => {
       title: '创建时间',
       dataIndex: 'createTime',
       width: 180,
+      render: (text: string) => {
+        return text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '';
+      },
     },
     {
       title: '操作',
@@ -145,56 +155,63 @@ const BankCard: React.FC = () => {
     },
   ];
 
-  // 模拟数据
-  const [dataSource] = useState<BankCardRecord[]>([
-    {
-      key: '1',
-      accountName: '张三',
-      cardNumber: '6222021234567890123',
-      bankName: '中国工商银行',
-      merchantId: 'M20240301001',
-      phone: '13800138000',
-      idNumber: '310101199001011234',
-      owner: '个人',
-      createTime: '2024-03-01 10:00:00',
-      idType: 'ID_CARD',
-      bankBranch: ['ICBC', 'ICBC_SH_001'],
-    },
-    {
-      key: '2',
-      accountName: '李四',
-      cardNumber: '6228481234567890123',
-      bankName: '中国农业银行',
-      merchantId: 'M20240301002',
-      phone: '13900139000',
-      idNumber: '310101199002022345',
-      owner: '企业',
-      createTime: '2024-03-01 11:00:00',
-      idType: 'ID_CARD',
-      bankBranch: ['ABC', 'ABC_SH_001'],
-    },
-    {
-      key: '3',
-      accountName: '王五',
-      cardNumber: '6225881234567890123',
-      bankName: '中国银行',
-      merchantId: 'M20240301003',
-      phone: '13700137000',
-      idNumber: '310101199003033456',
-      owner: '个人',
-      createTime: '2024-03-01 12:00:00',
-      idType: 'ID_CARD',
-      bankBranch: ['BOC', 'BOC_SH_001'],
-    },
-  ]);
+  // 数据源
+  const [dataSource, setDataSource] = useState<BankCardRecord[]>([]);
+
+  // 获取数据
+  useEffect(() => {
+    fetchData();
+  }, [currentPage, pageSize]);
+
+  const fetchData = async (searchParams?: any) => {
+    setLoading(true);
+    try {
+      const params = {
+        page: currentPage,
+        pageSize: pageSize,
+        ...searchParams
+      };
+      
+      const res = await getBankCardListApi(params);
+      console.log('银行卡列表', res);
+      
+      if (res.result) {
+        // 转换API返回的数据格式为页面需要的格式
+        // const list = (res.result || []).map((item: any) => ({
+        //   key: item.id,
+        //   accountName: item.accountName,
+        //   cardNumber: item.cardNumber,
+        //   bankName: item.bankName,
+        //   merchantId: item.merchantId,
+        //   phone: item.phone,
+        //   idNumber: item.idNumber,
+        //   owner: item.owner,
+        //   createTime: item.createTime,
+        //   idType: item.idType,
+        //   bankBranch: item.bankBranch,
+        // }));
+        
+        setDataSource(res.result);
+        setTotal(res.totalCount || 0);
+      } 
+    } catch (error) {
+      console.error('获取银行卡列表失败:', error);
+      message.error('获取数据失败');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = (values: any) => {
     console.log('搜索条件:', values);
-    // TODO: 实现搜索逻辑
+    setCurrentPage(1);
+    fetchData(values);
   };
 
   const handleReset = () => {
     form.resetFields();
+    setCurrentPage(1);
+    fetchData();
   };
 
   const handleViewDetail = (record: BankCardRecord) => {
@@ -236,10 +253,12 @@ const BankCard: React.FC = () => {
       const values = await addForm.validateFields();
       console.log('保存银行卡:', values);
       // TODO: 实现保存逻辑
+      message.success(isEdit ? '编辑成功' : '新增成功');
       setIsModalVisible(false);
       setIsEdit(false);
       setCurrentRecord(null);
       addForm.resetFields();
+      fetchData(); // 刷新列表
     } catch (error) {
       console.error('表单验证失败:', error);
     }
@@ -257,6 +276,7 @@ const BankCard: React.FC = () => {
       message.success('删除成功');
       setDeleteModalVisible(false);
       setRecordToDelete(null);
+      fetchData(); // 刷新列表
     } catch (error) {
       console.error('删除失败:', error);
       message.error('删除失败');
@@ -341,11 +361,16 @@ const BankCard: React.FC = () => {
         dataSource={dataSource}
         loading={loading}
         pagination={{
-          total: dataSource.length,
-          pageSize: 10,
+          current: currentPage,
+          pageSize: pageSize,
+          total: total,
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total) => `共 ${total} 条`,
+        }}
+        onChange={(pagination) => {
+          setCurrentPage(pagination.current || 1);
+          setPageSize(pagination.pageSize || 10);
         }}
         scroll={{ x: 1300 }}
       />
@@ -359,13 +384,14 @@ const BankCard: React.FC = () => {
       >
         <Form
           form={addForm}
-          layout="vertical"
+          layout="inline"
           requiredMark={false}
         >
           <Form.Item
             name="accountName"
             label="户名"
             rules={[{ required: true, message: '请输入户名' }]}
+            style={{ width: '100%' }}
           >
             <Input placeholder="请输入户名" />
           </Form.Item>
@@ -374,6 +400,7 @@ const BankCard: React.FC = () => {
             name="bankBranch"
             label="开户支行"
             rules={[{ required: true, message: '请选择开户支行' }]}
+            style={{ width: '100%' }}
           >
             <Cascader
               options={bankOptions}
@@ -389,6 +416,7 @@ const BankCard: React.FC = () => {
               { required: true, message: '请输入账户' },
               { pattern: /^\d{16,19}$/, message: '请输入16-19位数字' }
             ]}
+            style={{ width: '100%' }}
           >
             <Input placeholder="请输入账户" />
           </Form.Item>
@@ -400,6 +428,7 @@ const BankCard: React.FC = () => {
               { required: true, message: '请输入手机号' },
               { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' }
             ]}
+            style={{ width: '100%' }}
           >
             <Input placeholder="请输入手机号" />
           </Form.Item>
@@ -407,6 +436,7 @@ const BankCard: React.FC = () => {
           <Form.Item
             name="idType"
             label="证件类型"
+            style={{ width: '100%' }}
           >
             <Select
               placeholder="请选择证件类型"
@@ -421,6 +451,7 @@ const BankCard: React.FC = () => {
             rules={[
               { pattern: /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/, message: '请输入正确的证件编号' }
             ]}
+            style={{ width: '100%' }}
           >
             <Input placeholder="请输入证件编号" />
           </Form.Item>

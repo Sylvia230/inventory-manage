@@ -33,3 +33,8 @@ export const getVoucherImagesApi = async (paymentId: string): Promise<any> => {
 export const getSettlementDetailApi = async (params: any): Promise<any> =>{
     return axios.get(`/settlement/examineDetail/`,params ).then(res => res.result);
 }
+
+// 银行卡接口
+export const getBankCardListApi = async (params: any): Promise<any> =>{
+    return axios.post('/bankCard/pageQuery', params).then(res => res);
+}

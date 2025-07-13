@@ -1,9 +1,10 @@
-import React, { useState, useMemo} from 'react';
-import { Table, Button, Space, Modal, message, Form, Input, Card, Row, Col, Tag, Select, Cascader, Spin } from 'antd';
+import React, { useState, useMemo, useEffect} from 'react';
+import { Table, Button, Space, Modal, message, Form, Input, Card, Row, Col, Tag, Select, Cascader, Spin, InputNumber } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import styles from '../index.module.less';
 import debounce from 'lodash/debounce';
 import AuditModal from '../components/AuditModal';
+import { GetVendorListApi, AddVendorApi } from '@/services/merchant';
 
 interface Merchant {
   id: string;
@@ -35,29 +36,36 @@ const MerchantList: React.FC = () => {
   const [bankCardForm] = Form.useForm();
   const [tagModalVisible, setTagModalVisible] = useState(false);
   const [bankCardModalVisible, setBankCardModalVisible] = useState(false);
-  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [fetching, setFetching] = useState(false);
   const [tagOptions, setTagOptions] = useState<any[]>([]);
   const [auditModalVisible, setAuditModalVisible] = useState(false);
   const [auditLoading, setAuditLoading] = useState(false);
 
-  const [dataSource, setDataSource] = useState<Merchant[]>([
-    {
-      id: '1',
-      name: '测试企业1',
-      creditCode: '91110105MA12345678',
-      legalPerson: '张三',
-      legalPersonId: '110101199001011234',
-      legalSignature: '张三',
-      companySignature: '李四',
-      contactPerson: '王五',
-      businessAddress: '北京市朝阳区xxx街道',
-      creditLevel: 'A',
-      creditLimit: 1000000,
-      status: '正常',
-    },
-  ]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [rateModalVisible, setRateModalVisible] = useState(false);
+  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
+  const [rateForm] = Form.useForm();
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [addForm] = Form.useForm();
+
+  const [dataSource, setDataSource] = useState<Merchant[]>([]);
+
+  // 产品类型选项
+  const productTypeOptions = [
+    { label: '新车', value: 'new_car' },
+    { label: '二手车', value: 'used_car' },
+    { label: '试驾车', value: 'test_car' },
+  ];
+
+  // 经营场地类型选项
+  const venueTypeOptions = [
+    { label: '自有场地', value: 'owned' },
+    { label: '租赁场地', value: 'rented' },
+    { label: '合作场地', value: 'cooperative' },
+  ];
 
   // 模拟银行支行数据
   const bankBranches = [
@@ -79,6 +87,54 @@ const MerchantList: React.FC = () => {
     },
   ];
 
+
+  const fetchData = async (page = currentPage, size = pageSize) => {
+  setLoading(true);
+  try {
+    const params = {
+      page,
+      pageSize: size,
+      // 可以添加其他搜索参数，例如：
+      // name: form.getFieldValue('name'),
+      // creditCode: form.getFieldValue('creditCode'),
+    };
+
+    const res = await GetVendorListApi(params);
+    console.log('商家列表', res);
+    
+    // if (res && res.result) {
+    //   // 转换API返回的数据格式为页面需要的格式
+    //   const list = res.result.map((item: any) => ({
+    //     id: item.id,
+    //     name: item.name,
+    //     creditCode: item.creditCode,
+    //     legalPerson: item.legalPerson,
+    //     legalPersonId: item.legalPersonId,
+    //     legalSignature: item.legalSignature,
+    //     companySignature: item.companySignature,
+    //     contactPerson: item.contactPerson,
+    //     businessAddress: item.businessAddress,
+    //     creditLevel: item.creditLevel || 'A',
+    //     creditLimit: item.creditLimit || 0,
+    //     status: item.status === 1 ? '待审核' : item.status === 2 ? '正常' : '黑名单',
+    //   }));
+
+      setDataSource(res.result || []);
+      setTotal(res.totalCount || 0);
+    // } else {
+    //   message.error(res.msg || '获取数据失败');
+    // }
+  } catch (error) {
+    console.error('获取商家列表失败:', error);
+    message.error('获取数据失败');
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchData();
+}, []);
   const handleAddToBlacklist = (record: Merchant) => {
     Modal.confirm({
       title: '确认加入黑名单',
@@ -155,6 +211,47 @@ const MerchantList: React.FC = () => {
     form.resetFields();
   };
 
+  // 处理新增商家
+  const handleAddMerchant = () => {
+    setAddModalVisible(true);
+    addForm.resetFields();
+  };
+
+  // 处理新增商家提交
+  const handleAddMerchantSubmit = async (values: any) => {
+    try {
+      setLoading(true);
+      
+      const params = {
+        customerName: values.customerName,
+        mainBusiness: values.mainBusiness,
+        venueType: values.venueType,
+        totalCapital: values.totalCapital,
+        totalDebt: values.totalDebt,
+        revenue: values.revenue,
+        employeeCount: values.employeeCount,
+        mainTradingPartner: values.mainTradingPartner,
+        productType: values.productType,
+      };
+
+      const res = await AddVendorApi(params);
+      
+      if (res) {
+        message.success('新增商家成功');
+        setAddModalVisible(false);
+        addForm.resetFields();
+        fetchData(); // 刷新列表
+      } else {
+        message.error('新增失败');
+      }
+    } catch (error) {
+      console.error('新增商家失败:', error);
+      message.error('新增失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case '待审核':
@@ -202,6 +299,42 @@ const MerchantList: React.FC = () => {
     }
   };
 
+  // 修改日费率
+  const handleEditDailyRate = (record: Merchant) => {
+    setSelectedMerchant(record);
+    rateForm.setFieldsValue({
+      dailyRate: record.creditLimit // 假设 creditLimit 是当前日费率
+    });
+    setRateModalVisible(true);
+  };
+
+  const handleUpdateDailyRate = async (values: any) => {
+  try {
+    setLoading(true);
+    
+    // 调用API更新日费率
+    // const res = await UpdateDailyRateApi({
+    //   id: selectedMerchant?.id,
+    //   dailyRate: values.dailyRate
+    // });
+
+    // 模拟成功响应
+    const res = { code: 200, msg: '更新成功' };
+    
+    if (res.code === 200) {
+      message.success('日费率更新成功');
+      setRateModalVisible(false);
+      fetchData(); // 刷新列表
+    } else {
+      message.error(res.msg || '更新失败');
+    }
+  } catch (error) {
+    console.error('更新日费率失败:', error);
+    message.error('更新失败');
+  } finally {
+    setLoading(false);
+  }
+};
   const columns: ColumnsType<Merchant> = [
     {
       title: '商家名称',
@@ -211,8 +344,8 @@ const MerchantList: React.FC = () => {
     {
       title: '统一社会信用代码',
       width:160,
-      dataIndex: 'creditCode',
-      key: 'creditCode',
+      dataIndex: 'socialCreditCode',
+      key: 'socialCreditCode',
     },
     {
       title: '法人代表',
@@ -237,8 +370,8 @@ const MerchantList: React.FC = () => {
     },
     {
       title: '联系人',
-      dataIndex: 'contactPerson',
-      key: 'contactPerson',
+      dataIndex: 'contactName',
+      key: 'contactName',
     },
     {
       title: '经营场所',
@@ -257,7 +390,6 @@ const MerchantList: React.FC = () => {
       title: '服务费日费率',
       dataIndex: 'creditLimit',
       key: 'creditLimit',
-      render: (amount: number) => `¥${amount.toLocaleString()}`,
     },
     {
       title: '状态',
@@ -274,8 +406,8 @@ const MerchantList: React.FC = () => {
       width: '200',
       render: (_, record) => (
         <div>
-           <Button type="link" onClick={() => handleAudit(record)}>
-            修改日费率 （弹出输入日费率弹窗 （%））
+           <Button type="link" onClick={() => handleEditDailyRate(record)}>
+            修改日费率
         </Button>
         <Button type="link" onClick={() => handleAudit(record)}>
             审核
@@ -353,6 +485,9 @@ const debouncedFetchTagOptions = useMemo(
                   查询
                 </Button>
                 <Button onClick={handleReset}>重置</Button>
+                <Button type="primary" onClick={handleAddMerchant}>
+                  新增商家
+                </Button>
               </Space>
             </Col>
             {/* <Col span={10}>
@@ -521,11 +656,190 @@ const debouncedFetchTagOptions = useMemo(
           </Form.Item>
         </Form>
       </Modal>
+      <Modal
+        title="修改日费率"
+        open={rateModalVisible}
+        onOk={() => {
+          rateForm.validateFields().then(values => {
+            handleUpdateDailyRate(values);
+          });
+        }}
+        onCancel={() => {
+          setRateModalVisible(false);
+          rateForm.resetFields();
+        }}
+        okText="确定"
+        cancelText="取消"
+      >
+        <Form form={rateForm} layout="vertical">
+          <Form.Item
+            label="日费率 (%)"
+            name="dailyRate"
+            rules={[
+              { required: true, message: '请输入日费率' },
+              { type: 'number', min: 0, max: 100, message: '请输入0~100之间的数值' }
+            ]}
+          >
+            <InputNumber placeholder="请输入日费率 (%)" style={{ width: '100%' }} />
+          </Form.Item>
+        </Form>
+      </Modal>
       <AuditModal 
         open={auditModalVisible} 
         onCancel={() => setAuditModalVisible(false)}
         onOk={handleAuditSubmit}
         ></AuditModal>
+
+      {/* 新增商家弹窗 */}
+      <Modal
+        title="新增商家"
+        open={addModalVisible}
+        onCancel={() => {
+          setAddModalVisible(false);
+          addForm.resetFields();
+        }}
+        footer={null}
+        width={800}
+      >
+        <Form
+          form={addForm}
+          onFinish={handleAddMerchantSubmit}
+          layout="vertical"
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="customerName"
+                label="客户名"
+                rules={[{ required: true, message: '请填写公司名称' }]}
+              >
+                <Input placeholder="请填写公司名称" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="mainBusiness"
+                label="主营业务"
+                rules={[{ required: true, message: '请填写主营业务' }]}
+              >
+                <Input placeholder="请填写主营业务" />
+              </Form.Item>
+            </Col>
+          </Row>
+          
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="venueType"
+                label="经营场地类型"
+                rules={[{ required: true, message: '请选择经营场地类型' }]}
+              >
+                <Select
+                  placeholder="请选择经营场地类型"
+                  options={venueTypeOptions}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="productType"
+                label="产品类型"
+                rules={[{ required: true, message: '请选择产品类型' }]}
+              >
+                <Select
+                  placeholder="请选择产品类型"
+                  options={productTypeOptions}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item
+                name="totalCapital"
+                label="资金总额（万）"
+                rules={[{ required: true, message: '请输入资金总额' }]}
+              >
+                <InputNumber
+                  placeholder="请输入资金总额"
+                  style={{ width: '100%' }}
+                  min={0}
+                  precision={2}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="totalDebt"
+                label="负债总额（万）"
+                rules={[{ required: true, message: '请输入负债总额' }]}
+              >
+                <InputNumber
+                  placeholder="请输入负债总额"
+                  style={{ width: '100%' }}
+                  min={0}
+                  precision={2}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="revenue"
+                label="营业收入（万）"
+                rules={[{ required: true, message: '请输入营业收入' }]}
+              >
+                <InputNumber
+                  placeholder="请输入营业收入"
+                  style={{ width: '100%' }}
+                  min={0}
+                  precision={2}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="employeeCount"
+                label="员工人数（人）"
+                rules={[{ required: true, message: '请输入员工人数' }]}
+              >
+                <InputNumber
+                  placeholder="请输入员工人数"
+                  style={{ width: '100%' }}
+                  min={1}
+                  precision={0}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="mainTradingPartner"
+                label="主要交易对手名称"
+                rules={[{ required: true, message: '请填写公司名称' }]}
+              >
+                <Input placeholder="请填写公司名称" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item style={{ marginTop: 24, textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => {
+                setAddModalVisible(false);
+                addForm.resetFields();
+              }}>
+                取消
+              </Button>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                确定
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
