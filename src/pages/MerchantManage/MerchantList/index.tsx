@@ -4,7 +4,8 @@ import type { ColumnsType } from 'antd/es/table';
 import styles from '../index.module.less';
 import debounce from 'lodash/debounce';
 import AuditModal from '../components/AuditModal';
-import { GetVendorListApi, AddVendorApi } from '@/services/merchant';
+import { GetVendorListApi, AddVendorApi, AddBlackListApi, AddTagApi, GetTagListApi, SaveTagRelationApi } from '@/services/merchant';
+import { GetEnumApi } from '@/services/user';
 
 interface Merchant {
   id: string;
@@ -50,8 +51,19 @@ const MerchantList: React.FC = () => {
   const [rateForm] = Form.useForm();
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [addForm] = Form.useForm();
+  const [productOptions, setProductOptions] = useState<any[]>([]);
+  const [productSmallOptions, setProductSmallOptions] = useState<any[]>([]);
+  const [filteredProductSmallOptions, setFilteredProductSmallOptions] = useState<any[]>([]);
+  const [venueTypeOptions, setVenueTypeOptions] = useState<any[]>([]);
 
   const [dataSource, setDataSource] = useState<Merchant[]>([]);
+
+   // 添加黑名单相关状态
+   const [addBlacklistVisible, setAddBlacklistVisible] = useState(false);
+   const [addBlacklistForm] = Form.useForm();
+   const [vendorOptions, setVendorOptions] = useState<any[]>([]);
+   const [vendorLoading, setVendorLoading] = useState(false);
+   const [currentRecord, setCurrentRecord] = useState<any>(null);
 
   // 产品类型选项
   const productTypeOptions = [
@@ -60,12 +72,12 @@ const MerchantList: React.FC = () => {
     { label: '试驾车', value: 'test_car' },
   ];
 
-  // 经营场地类型选项
-  const venueTypeOptions = [
-    { label: '自有场地', value: 'owned' },
-    { label: '租赁场地', value: 'rented' },
-    { label: '合作场地', value: 'cooperative' },
-  ];
+  // // 经营场地类型选项
+  // const venueTypeOptions = [
+  //   { label: '自有场地', value: 'owned' },
+  //   { label: '租赁场地', value: 'rented' },
+  //   { label: '合作场地', value: 'cooperative' },
+  // ];
 
   // 模拟银行支行数据
   const bankBranches = [
@@ -101,29 +113,9 @@ const MerchantList: React.FC = () => {
 
     const res = await GetVendorListApi(params);
     console.log('商家列表', res);
-    
-    // if (res && res.result) {
-    //   // 转换API返回的数据格式为页面需要的格式
-    //   const list = res.result.map((item: any) => ({
-    //     id: item.id,
-    //     name: item.name,
-    //     creditCode: item.creditCode,
-    //     legalPerson: item.legalPerson,
-    //     legalPersonId: item.legalPersonId,
-    //     legalSignature: item.legalSignature,
-    //     companySignature: item.companySignature,
-    //     contactPerson: item.contactPerson,
-    //     businessAddress: item.businessAddress,
-    //     creditLevel: item.creditLevel || 'A',
-    //     creditLimit: item.creditLimit || 0,
-    //     status: item.status === 1 ? '待审核' : item.status === 2 ? '正常' : '黑名单',
-    //   }));
 
       setDataSource(res.result || []);
       setTotal(res.totalCount || 0);
-    // } else {
-    //   message.error(res.msg || '获取数据失败');
-    // }
   } catch (error) {
     console.error('获取商家列表失败:', error);
     message.error('获取数据失败');
@@ -133,8 +125,122 @@ const MerchantList: React.FC = () => {
 };
 
 useEffect(() => {
-  fetchData();
+  fetchData(1, 10);
+  getProductList();
+  getProductSmallList();
+  getVenueList();
 }, []);
+
+// 获取经验场地
+const getVenueList = async () => {
+  const res = await GetEnumApi('RunningTypeEnum');
+  let venueOptionsList:any[] = []
+  res?.forEach((item: any) => {
+    venueOptionsList.push({
+      label: item.desc,
+      value: item.code, 
+    })
+  })
+  setVenueTypeOptions(venueOptionsList);
+}
+
+// 获取产品大类
+const getProductList = async () => {
+  const res = await GetEnumApi('BizCategoryEnum');
+  let productOptionsList:any[] = []
+    res?.forEach((item: any) => {
+      productOptionsList.push({
+        label: item.desc,
+        value: item.code,
+      })
+    })
+    setProductOptions(productOptionsList);
+}
+
+// 获取产品小类
+const getProductSmallList = async () => {
+  const res = await GetEnumApi('BizCategorySubEnum');
+  let productSmallOptionsList:any[] = []
+  res?.forEach((item: any) => {
+    productSmallOptionsList.push({
+      label: item.desc,
+      value: item.code,
+    })
+  })
+  setProductSmallOptions(productSmallOptionsList);
+}
+
+// 处理产品大类变化
+const handleProductCategoryChange = (value: any) => {
+  console.log('产品大类变化:', value);
+  
+  // 根据产品大类筛选产品小类
+  let filteredOptions: any[] = [];
+  
+  if (value == 2) {
+    // 如果产品大类code等于2，筛选小类中code等于2和4的
+    filteredOptions = productSmallOptions.filter(item => 
+      item.value == '2' || item.value == '4'
+    );
+  } else if (value == 1) {
+    // 如果产品大类code等于1，筛选小类中code等于1和3的
+    filteredOptions = productSmallOptions.filter(item => 
+      item.value == '1' || item.value == '3'
+    );
+  } else {
+    // 其他情况显示所有小类
+    filteredOptions = productSmallOptions;
+  }
+  
+  setFilteredProductSmallOptions(filteredOptions);
+  
+  // 清空产品小类的选择
+  bankCardForm.setFieldsValue({ productSmall: undefined });
+};
+
+
+  // 打开添加黑名单弹窗
+  const handleAddBlacklist = (record: Merchant) => {
+    console.log('record', record);
+    setCurrentRecord(record);
+    setAddBlacklistVisible(true);
+    addBlacklistForm.resetFields();
+  };
+
+  // 提交添加黑名单
+  const handleAddBlacklistSubmit = async (values: any) => {
+    try {
+      setLoading(true);
+      const params = {
+        vendorId: currentRecord.id,
+        reason: values.reason,
+        status: 1,
+        vendorName: currentRecord.name,
+      };
+      
+      const res = await AddBlackListApi(params);
+      if (res) {
+        message.success('添加黑名单成功');
+        setAddBlacklistVisible(false);
+        addBlacklistForm.resetFields();
+        // 刷新列表
+        fetchData(1, 10);
+      } else {
+        message.error('添加黑名单失败');
+      }
+    } catch (error) {
+      console.error('添加黑名单失败:', error);
+      message.error('添加黑名单失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 取消添加黑名单
+  const handleAddBlacklistCancel = () => {
+    setAddBlacklistVisible(false);
+    addBlacklistForm.resetFields();
+  };
   const handleAddToBlacklist = (record: Merchant) => {
     Modal.confirm({
       title: '确认加入黑名单',
@@ -144,6 +250,12 @@ useEffect(() => {
       onOk: async () => {
         try {
           setLoading(true);
+          const params = {
+            vendorId: record.id,
+            reason: '添加到黑名单',
+            status: 1,
+          };
+          await AddBlackListApi(params);
           // TODO: 调用加入黑名单API
           setDataSource(dataSource.map(item => 
             item.id === record.id ? { ...item, status: '黑名单' } : item
@@ -171,10 +283,52 @@ useEffect(() => {
   const handleTagSubmit = async (values: any) => {
     try {
       setLoading(true);
-      // TODO: 调用添加标签API
+      
+      if (!selectedTags || selectedTags.length === 0) {
+        message.warning('请选择或输入标签');
+        return;
+      }
+
+      // 检查选中的标签是否为新标签（没有ID的标签）
+      const selectedTag = tagOptions.find(tag => tag.value === selectedTags[0]);
+      const isNewTag = selectedTag && !selectedTag.value.toString().includes('-') && selectedTag.isNew;
+
+      if (isNewTag) {
+        // 如果是新标签，先创建标签
+        const createTagRes = await AddTagApi({
+          tagName: selectedTag.label,
+          tagType: 1,
+        });
+        const createTagRes2 = await SaveTagRelationApi(
+          [
+            { tagName: selectedTag.label,
+              tagId: createTagRes,
+              tagType: 1,
+              bizId: selectedMerchant?.id || '',
+              
+            }
+          ]
+        );
+        console.log(createTagRes, '创建标签')
+        console.log(createTagRes, '创建标签')
+
+      } else {
+        const createTagRes = await SaveTagRelationApi({
+          tagName: selectedTag.label,
+          tagId: selectedTag.id || '',
+          tagType: 1,
+          bizId: selectedMerchant?.id || '',
+        });
+      }
+
+      
       message.success('标签添加成功');
+      fetchData(1, 10);
       setTagModalVisible(false);
+      setSelectedTags([]);
+      setTagOptions([]);
     } catch (error) {
+      console.error('添加标签失败:', error);
       message.error('操作失败');
     } finally {
       setLoading(false);
@@ -198,6 +352,7 @@ useEffect(() => {
   const handleSearch = async (values: any) => {
     try {
       setLoading(true);
+      fetchData(1, 10);
       // TODO: 调用搜索API
       console.log('搜索条件：', values);
     } catch (error) {
@@ -348,30 +503,30 @@ useEffect(() => {
       key: 'socialCreditCode',
     },
     {
-      title: '法人代表',
-      dataIndex: 'legalPerson',
-      key: 'legalPerson',
+      title: '法人姓名',
+      dataIndex: 'legalName',
+      key: 'legalName',
     },
     {
-      title: '法人代表身份证',
+      title: '法人手机号',
       width:160,
-      dataIndex: 'legalPersonId',
-      key: 'legalPersonId',
+      dataIndex: 'legalMobile',
+      key: 'legalMobile',
     },
     {
-      title: '法人签章人',
-      dataIndex: 'legalSignature',
-      key: 'legalSignature',
-    },
-    {
-      title: '企业签章人',
-      dataIndex: 'companySignature',
-      key: 'companySignature',
+      title: '签章人',
+      dataIndex: 'signerName',
+      key: 'signerName',
     },
     {
       title: '联系人',
       dataIndex: 'contactName',
       key: 'contactName',
+    },
+    {
+      title: '联系人电话',
+      dataIndex: 'contactMobile',
+      key: 'contactMobile',
     },
     {
       title: '经营场所',
@@ -416,7 +571,7 @@ useEffect(() => {
             新增标签
           </Button>
           {record.status !== '黑名单' && (
-            <Button type="link" onClick={() => handleAddToBlacklist(record)}>
+            <Button type="link" onClick={() => handleAddBlacklist(record)}>
               添加黑名单
             </Button>
           )}
@@ -432,25 +587,60 @@ useEffect(() => {
  const fetchTagOptions = async (searchText: string) => {
     setFetching(true);
     try {
-      // TODO: 替换为实际的API调用
-      // const response = await request.get('/api/tags/search', {
-      //   params: { keyword: searchText }
-      // });
-      // setTagOptions(response.data);
-      
-      // 模拟数据
-      const mockData: any[] = [
-        { value: 'urgent', label: '加急', color: 'red' },
-        { value: 'vip', label: 'VIP客户', color: 'gold' },
-        { value: 'new', label: '新客户', color: 'green' },
-        { value: 'special', label: '特殊处理', color: 'purple' },
-      ].filter(item => 
-        item.label.toLowerCase().includes(searchText.toLowerCase())
-      );
-      
-      setTagOptions(mockData);
+      // 调用真实的API接口
+      const response = await GetTagListApi({
+        page: 1,
+        pageSize: 100,
+        tagName: searchText || undefined
+      });
+      console.log(response, '标签数据')
+      if (response && response.result) {
+        // 转换API返回的数据格式
+        const tagData = response.result.map((item: any) => ({
+          value: item.id,
+          label: item.tagName,
+          color: item.color || 'blue'
+        }));
+        
+        // 如果有搜索文本且不在现有标签中，添加新标签选项
+        if (searchText && !tagData.some((tag: any) => tag.label.toLowerCase() === searchText.toLowerCase())) {
+          tagData.unshift({
+            value: searchText,
+            label: searchText,
+            color: 'green',
+            isNew: true
+          });
+        }
+        
+        setTagOptions(tagData);
+      } else {
+        // 如果API没有返回数据，但有搜索文本，添加新标签选项
+        if (searchText) {
+          setTagOptions([{
+            value: searchText,
+            label: searchText,
+            color: 'green',
+            isNew: true
+          }]);
+        } else {
+          setTagOptions([]);
+        }
+      }
     } catch (error) {
+      console.error('获取标签列表失败:', error);
       message.error('获取标签列表失败');
+      
+      // 如果API调用失败，但有搜索文本，添加新标签选项
+      if (searchText) {
+        setTagOptions([{
+          value: searchText,
+          label: searchText,
+          color: 'green',
+          isNew: true
+        }]);
+      } else {
+        setTagOptions([]);
+      }
     } finally {
       setFetching(false);
     }
@@ -555,11 +745,10 @@ const debouncedFetchTagOptions = useMemo(
             tooltip="请至少选择一个标签"
           >
             <Select
-              // mode="multiple"
               style={{ width: '280px' }}
               placeholder="请选择或搜索标签"
-              value={selectedTags}
-              onChange={setSelectedTags}
+              value={selectedTags.length > 0 ? selectedTags[0] : undefined}
+              onChange={(value) => setSelectedTags(value ? [value] : [])}
               onSearch={debouncedFetchTagOptions}
               notFoundContent={fetching ? <Spin size="small" /> : null}
               options={tagOptions}
@@ -567,6 +756,7 @@ const debouncedFetchTagOptions = useMemo(
               optionFilterProp="label"
               showSearch
               allowClear
+              filterOption={false}
             />
           </Form.Item>
         </Form>
@@ -709,7 +899,7 @@ const debouncedFetchTagOptions = useMemo(
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="customerName"
+                name="name"
                 label="客户名"
                 rules={[{ required: true, message: '请填写公司名称' }]}
               >
@@ -736,19 +926,36 @@ const debouncedFetchTagOptions = useMemo(
               >
                 <Select
                   placeholder="请选择经营场地类型"
-                  options={venueTypeOptions}
+                  options={venueTypeOptions.map((item: any) => ({
+                    label: item.label,
+                    value: item.value,
+                  }))}
                 />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
-                name="productType"
-                label="产品类型"
-                rules={[{ required: true, message: '请选择产品类型' }]}
+                name="bizCategory"
+                label="产品大类"
+                rules={[{ required: true, message: '请选择产品大类' }]}
               >
                 <Select
-                  placeholder="请选择产品类型"
-                  options={productTypeOptions}
+                  placeholder="请选择产品大类"
+                  options={productOptions}
+                  onChange={handleProductCategoryChange}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="bizCategorySub"
+                label="产品小类"
+                rules={[{ required: true, message: '请选择产品小类' }]}
+              >
+                <Select
+                  placeholder="请先选择产品大类"
+                  options={filteredProductSmallOptions}
+                  disabled={filteredProductSmallOptions.length === 0}
                 />
               </Form.Item>
             </Col>
@@ -757,7 +964,7 @@ const debouncedFetchTagOptions = useMemo(
           <Row gutter={16}>
             <Col span={8}>
               <Form.Item
-                name="totalCapital"
+                name="totalAssets"
                 label="资金总额（万）"
                 rules={[{ required: true, message: '请输入资金总额' }]}
               >
@@ -771,7 +978,7 @@ const debouncedFetchTagOptions = useMemo(
             </Col>
             <Col span={8}>
               <Form.Item
-                name="totalDebt"
+                name="totalLiabilities"
                 label="负债总额（万）"
                 rules={[{ required: true, message: '请输入负债总额' }]}
               >
@@ -785,7 +992,7 @@ const debouncedFetchTagOptions = useMemo(
             </Col>
             <Col span={8}>
               <Form.Item
-                name="revenue"
+                name="operatingIncome"
                 label="营业收入（万）"
                 rules={[{ required: true, message: '请输入营业收入' }]}
               >
@@ -802,7 +1009,7 @@ const debouncedFetchTagOptions = useMemo(
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="employeeCount"
+                name="employeeNum"
                 label="员工人数（人）"
                 rules={[{ required: true, message: '请输入员工人数' }]}
               >
@@ -816,7 +1023,7 @@ const debouncedFetchTagOptions = useMemo(
             </Col>
             <Col span={12}>
               <Form.Item
-                name="mainTradingPartner"
+                name="mainTradeCompany"
                 label="主要交易对手名称"
                 rules={[{ required: true, message: '请填写公司名称' }]}
               >
@@ -837,6 +1044,37 @@ const debouncedFetchTagOptions = useMemo(
                 确定
               </Button>
             </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+
+      {/* 添加黑名单弹窗 */}
+      <Modal
+        title="添加黑名单"
+        open={addBlacklistVisible}
+        onOk={() => addBlacklistForm.submit()}
+        onCancel={handleAddBlacklistCancel}
+        confirmLoading={loading}
+        width={600}
+      >
+        <Form
+          form={addBlacklistForm}
+          layout="inline"
+          onFinish={handleAddBlacklistSubmit}
+        >
+          <Form.Item
+            name="reason"
+            label="添加黑名单原因"
+            rules={[{ required: true, message: '请输入添加黑名单原因' }]}
+            style={{ width: '100%' }}
+          >
+            <Input.TextArea
+              placeholder="请输入添加黑名单的原因"
+              rows={4}
+              maxLength={500}
+              showCount
+            />
           </Form.Item>
         </Form>
       </Modal>

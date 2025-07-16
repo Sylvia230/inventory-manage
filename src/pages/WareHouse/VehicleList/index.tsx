@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Table, Button, Form, Input, Select, Space, Row, Col, Tag, Modal, message, Descriptions, Tabs, Empty, Image } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { UploadFile } from 'antd/es/upload/interface';
@@ -6,8 +6,12 @@ import { SearchOutlined, ReloadOutlined, EyeOutlined, GlobalOutlined } from '@an
 import styles from './index.module.less';
 import dayjs from 'dayjs';
 import VehiclePhotoUpload from '@/components/VehiclePhotoUpload';
+import { getGpsListApi,bindGPSApi, getInStockVehicleListApi, getInStockVehicleDetailApi } from '@/services/wareHouse';
+
+const { Option } = Select;
 
 interface VehicleRecord {
+  id?: string;
   key: string;
   vin: string;
   vehicleType: string;
@@ -55,7 +59,7 @@ interface UploadModalProps {
 const UploadModal: React.FC<UploadModalProps> = ({ visible, onCancel, onOk, loading }) => {
   const [photoData, setPhotoData] = useState<Record<string, UploadFile[]>>({});
   const [formData, setFormData] = useState<any>({});
-
+  
   const handleSubmit = async () => {
     try {
       // 合并照片数据和表单数据
@@ -116,11 +120,11 @@ interface BindGPSModalProps {
 
 const BindGPSModal: React.FC<BindGPSModalProps> = ({ visible, onCancel, onOk, loading }) => {
   const [form] = Form.useForm();
-
+  const [gpsList, setGpsList] = useState<any[]>([]);
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      onOk(values.reason);
+      onOk(values.gpsDeviceId);
     } catch (error) {
       console.error('表单验证失败:', error);
     }
@@ -129,6 +133,17 @@ const BindGPSModal: React.FC<BindGPSModalProps> = ({ visible, onCancel, onOk, lo
   const handleCancel = () => {
     form.resetFields();
     onCancel();
+  };
+
+  useEffect(() => {
+    getGpsList();
+  }, []);
+
+  // 获取GPS
+  const getGpsList = async () => {
+    const res:any = await getGpsListApi({});
+    console.log(res, 'getGpsList');
+    setGpsList(res?.result || []);
   };
 
   return (
@@ -144,21 +159,19 @@ const BindGPSModal: React.FC<BindGPSModalProps> = ({ visible, onCancel, onOk, lo
     >
       <Form form={form} layout="inline">
         <Form.Item
-          name="reason"
-          label="绑定原因"
-          rules={[
-            { required: true, message: '请输入绑定原因' },
-            { min: 200, message: '绑定原因至少需要200个字' }
-          ]}
-        >
-          <Input.TextArea
-            rows={10}
-            showCount
-            maxLength={500}
-            placeholder="请详细描述绑定GPS的原因（至少200字）"
-            style={{ width: '440px' }}
-          />
-        </Form.Item>
+            name="gpsDeviceId"
+            label="选择GPS"
+            rules={[{ required: true, message: '请选择GPS' }]}
+            style={{ width: '100%' }}
+          >
+            <Select placeholder="请选择GPS">
+              {gpsList.map(gps => (
+                <Option key={gps.id} value={gps.id}>
+                  {gps.simNo}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
       </Form>
     </Modal>
   );
@@ -169,6 +182,7 @@ interface VehicleDetailModalProps {
   visible: boolean;
   onCancel: () => void;
   data: VehicleRecord | null;
+  loading?: boolean;
 }
 
 // 照片类型配置
@@ -186,7 +200,7 @@ const PHOTO_LIST = [
   { name: 'engineBay', label: '发动机舱', value: '11' },
 ];
 
-const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({ visible, onCancel, data }) => {
+const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({ visible, onCancel, data, loading }) => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
   const [previewTitle, setPreviewTitle] = useState('');
@@ -271,6 +285,7 @@ const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({ visible, onCanc
       open={visible}
       onCancel={onCancel}
       width={1000}
+      confirmLoading={loading}
       footer={[
         <Button key="close" onClick={onCancel}>
           关闭
@@ -390,11 +405,16 @@ const VehicleListInStock: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
-  const [currentRecord, setCurrentRecord] = useState<VehicleRecord | null>(null);
+  const [currentRecord, setCurrentRecord] = useState<any>(null);
   const [bindGPSModalVisible, setBindGPSModalVisible] = useState(false);
-  const [currentBindRecord, setCurrentBindRecord] = useState<VehicleRecord | null>(null);
+  const [currentBindRecord, setCurrentBindRecord] = useState<any>(null);
   const [bindLoading, setBindLoading] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [dataSource, setDataSource] = useState<VehicleRecord[]>([]);
 
   // 车辆状态选项
   const vehicleStatusOptions = [
@@ -420,27 +440,27 @@ const VehicleListInStock: React.FC = () => {
     },
     {
       title: '车辆属性',
-      dataIndex: 'vehicleType',
-      width: 120,
+      dataIndex: 'vehicleName',
+      width: 180,
     },
-    {
-      title: '产品类型',
-      dataIndex: 'productType',
-      width: 120,
-      render: (type: string) => (
-        <Tag color={type === '新车' ? 'blue' : type === '二手车' ? 'green' : 'orange'}>
-          {type}
-        </Tag>
-      ),
-    },
+    // {
+    //   title: '产品类型',
+    //   dataIndex: 'productType',
+    //   width: 120,
+    //   render: (type: string) => (
+    //     <Tag color={type === '新车' ? 'blue' : type === '二手车' ? 'green' : 'orange'}>
+    //       {type}
+    //     </Tag>
+    //   ),
+    // },
     {
       title: '业务单号',
-      dataIndex: 'businessNo',
+      dataIndex: 'orderNo',
       width: 150,
     },
     {
       title: '客户',
-      dataIndex: 'customer',
+      dataIndex: 'customerName',
       width: 120,
     },
     {
@@ -448,44 +468,29 @@ const VehicleListInStock: React.FC = () => {
       dataIndex: 'warehouse',
       width: 150,
     },
-    {
-      title: '车辆库龄',
-      dataIndex: 'storageAge',
-      width: 100,
-      render: (age: number) => `${age}天`,
-    },
+    // {
+    //   title: '车辆库龄',
+    //   dataIndex: 'storageAge',
+    //   width: 100,
+    //   render: (age: number) => `${age}天`,
+    // },
     {
       title: 'GPS状态',
-      dataIndex: 'gpsStatus',
+      dataIndex: 'gpsStatusDesc',
       width: 100,
-      render: (status: string) => (
-        <Tag color={status === '在线' ? 'success' : status === '未绑定' ? 'warning' : 'error'}>
-          {status}
-        </Tag>
-      ),
     },
     {
       title: '车辆状态',
-      dataIndex: 'vehicleStatus',
+      dataIndex: 'statusDesc',
       width: 100,
-      render: (status: string) => (
-        <Tag color={
-          status === '在库' ? 'success' :
-          status === '出库中' ? 'warning' :
-          status === '已出库' ? 'default' : 'error'
-        }>
-          {status}
-        </Tag>
-      ),
     },
     {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 240,
+      width: 120,
       render: (_, record) => (
-        <Space size="middle">
-          {record.gpsStatus === '未绑定' && (
+        <span>
             <Button 
               type="link" 
               icon={<GlobalOutlined />}
@@ -493,48 +498,73 @@ const VehicleListInStock: React.FC = () => {
             >
               绑定GPS
             </Button>
-          )}
           {/* <Button type="link" onClick={() => handleUpload(record)}>
             上传照片
           </Button> */}
           <Button type="link" onClick={() => handleViewDetail(record)}>
             查看
           </Button>
-        </Space>
+        </span>
       ),
     },
   ];
 
-  // 模拟数据
-  const [dataSource] = useState<VehicleRecord[]>([
-    {
-      key: '1',
-      vin: 'LVGBE40K8GP123456',
-      vehicleType: 'SUV',
-      productType: '新车',
-      businessNo: 'BUS20240301001',
-      customer: '张三',
-      warehouse: '上海中心仓库',
-      storageAge: 15,
-      gpsStatus: '在线',
-      vehicleStatus: '在库',
-    },
-    {
-      key: '2',
-      vin: 'LVGBE40K8GP123457',
-      vehicleType: '轿车',
-      productType: '二手车',
-      businessNo: 'BUS20240301002',
-      customer: '李四',
-      warehouse: '北京分仓',
-      storageAge: 30,
-      gpsStatus: '未绑定',
-      vehicleStatus: '出库中',
-    },
-  ]);
+  // // 模拟数据
+  // const [dataSource] = useState<VehicleRecord[]>([
+  //   {
+  //     key: '1',
+  //     vin: 'LVGBE40K8GP123456',
+  //     vehicleType: 'SUV',
+  //     productType: '新车',
+  //     businessNo: 'BUS20240301001',
+  //     customer: '张三',
+  //     warehouse: '上海中心仓库',
+  //     storageAge: 15,
+  //     gpsStatus: '在线',
+  //     vehicleStatus: '在库',
+  //   },
+  //   {
+  //     key: '2',
+  //     vin: 'LVGBE40K8GP123457',
+  //     vehicleType: '轿车',
+  //     productType: '二手车',
+  //     businessNo: 'BUS20240301002',
+  //     customer: '李四',
+  //     warehouse: '北京分仓',
+  //     storageAge: 30,
+  //     gpsStatus: '未绑定',
+  //     vehicleStatus: '出库中',
+  //   },
+  // ]);
+
+  const fetchData = async (page = currentPage, size = pageSize) => {
+    setLoading(true);
+    try {
+      const params = {
+        page,
+        pageSize: size,
+      };
+  
+      const res = await getInStockVehicleListApi(params);
+      console.log('在库车辆列表', res);
+  
+        setDataSource(res.result || []);
+        setTotal(res.totalCount || 0);
+    } catch (error) {
+      console.error('获取商家列表失败:', error);
+      message.error('获取数据失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData(1, 10);
+  }, []);
 
   const handleSearch = (values: any) => {
     console.log('搜索条件:', values);
+    fetchData(1, 10);
     // TODO: 实现搜索逻辑
   };
 
@@ -543,9 +573,35 @@ const VehicleListInStock: React.FC = () => {
   };
 
   // 处理查看详情
-  const handleViewDetail = (record: VehicleRecord) => {
-    setCurrentRecord(record);
-    setDetailModalVisible(true);
+  const handleViewDetail = async (record: VehicleRecord) => {
+    try {
+      setLoading(true);
+      
+      // 调用获取详情接口
+      const res = await getInStockVehicleDetailApi({ id: record.id });
+      console.log('车辆详情', res);
+      
+      if (res?.result) {
+        // 合并详情数据到记录中
+        const detailData = {
+          ...record,
+          ...res.result,
+          // 确保照片数据正确
+          inspectionPhotos: res.result.inspectionPhotos || [],
+          damagePhotos: res.result.damagePhotos || [],
+        };
+        
+        setCurrentRecord(detailData);
+        setDetailModalVisible(true);
+      } else {
+        message.error('获取车辆详情失败');
+      }
+    } catch (error) {
+      console.error('获取车辆详情失败:', error);
+      message.error('获取车辆详情失败');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleUpload = (record: VehicleRecord) => {
@@ -567,21 +623,21 @@ const VehicleListInStock: React.FC = () => {
   };
 
   // 处理绑定GPS提交
-  const handleBindGPSSubmit = async (reason: string) => {
+  const handleBindGPSSubmit = async (gpsDeviceId: any) => {
     if (!currentBindRecord) return;
     
     setBindLoading(true);
     try {
       // TODO: 调用绑定GPS的API
-      // await bindGPSApi({
-      //   vehicleId: currentBindRecord.id,
-      //   reason: reason
-      // });
+      await bindGPSApi({
+        wmsCarId: currentBindRecord.id,
+        gpsDeviceId
+      });
       
       message.success('GPS绑定成功');
       setBindGPSModalVisible(false);
       // 刷新列表数据
-      // fetchData();
+      fetchData(1, 10);
     } catch (error) {
       message.error('GPS绑定失败');
       console.error('绑定GPS失败:', error);
@@ -685,6 +741,7 @@ const VehicleListInStock: React.FC = () => {
         visible={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         data={currentRecord}
+        loading={loading}
       />
     </div>
   );

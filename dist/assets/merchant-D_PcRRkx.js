@@ -1,1 +1,0 @@
-import{y as r}from"./index-D-wqIkuG.js";function n(e){return r.post("/vendor/pageQuery",e).then(t=>t.result)}function o(e){return r.post("/vendorCredit/pageQuery",e).then(t=>t.result)}function s(e){return r.post("/creditLimit/delete",e).then(t=>t.result)}function u(e){return r.post("/vendor/saveVendor",e).then(t=>t.result)}export{u as A,s as D,n as G,o as a};
