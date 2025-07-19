@@ -38,3 +38,29 @@ export const getSettlementDetailApi = async (params: any): Promise<any> =>{
 export const getBankCardListApi = async (params: any): Promise<any> =>{
     return axios.post('/bankCard/pageQuery', params).then(res => res);
 }
+
+// 获取银行
+export const getBankListApi = async (params: any): Promise<any> => {
+    return axios.post('/bank/pageQuery', params).then(res => res.result);
+};
+
+// 获取银行支行
+export const getBankBranchListApi = async (params: any): Promise<any> => {
+    return axios.post('/bankBranch/pageQuery', params).then(res => res.result);
+};
+
+// 枚举接口
+export function getEnumApi(data: any) {
+    return axios.get<unknown, any>(`/enums/${data}`).then(res => res.result);
+}
+
+
+// 获取归属方列表
+export function getOwnerListApi(data: any,name: String) {
+    return axios.get<unknown, any>(`/bankCard/ownerList/${data}?name=`+name).then(res => res.result);
+}
+
+// 获取归属方列表
+export const saveBankCardApi = async (data: any): Promise<any> => {
+    return axios.post<unknown, any>(`/bankCard/saveBankCard`,data).then(res => res.result);
+}

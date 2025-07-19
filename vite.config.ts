@@ -22,7 +22,7 @@ export default defineConfig({
 	server: {
 		// hmr: true,
 		host: '127.0.0.1',
-		port: 9001,
+		port: 9002,
 		proxy: {
 			['/gdv']: {
 				target: 'http://120.26.232.36/gdv/',
@@ -37,7 +37,7 @@ export default defineConfig({
 					});
 					proxy.on('proxyRes', (proxyRes, req, res) => {
 						// 设置正确的 CORS 响应头
-						proxyRes.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:9001';
+						proxyRes.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:9002';
 						proxyRes.headers['Access-Control-Allow-Methods'] = 'GET,HEAD,PUT,PATCH,POST,DELETE';
 						proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
 						proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
@@ -58,7 +58,7 @@ export default defineConfig({
 					});
 					proxy.on('proxyRes', (proxyRes, req, res) => {
 						// 设置正确的 CORS 响应头
-						proxyRes.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:9001';
+						proxyRes.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:9002';
 						proxyRes.headers['Access-Control-Allow-Methods'] = 'GET,HEAD,PUT,PATCH,POST,DELETE';
 						proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
 						proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
@@ -79,7 +79,7 @@ export default defineConfig({
 					});
 					proxy.on('proxyRes', (proxyRes, req, res) => {
 						// 设置正确的 CORS 响应头
-						proxyRes.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:9001';
+						proxyRes.headers['Access-Control-Allow-Origin'] = 'http://127.0.0.1:9002';
 						proxyRes.headers['Access-Control-Allow-Methods'] = 'GET,HEAD,PUT,PATCH,POST,DELETE';
 						proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
 						proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';

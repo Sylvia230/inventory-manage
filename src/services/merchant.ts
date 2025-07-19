@@ -34,3 +34,13 @@ export function GetCreditLimitDetailApi(data: any) {
 export function AddVendorApi(data: any) {
 	return axios.post<unknown, any>('/vendor/saveVendor', data).then(res => res.result);
 }
+
+// 修改商家
+export function saveVendorApi(data: any) {
+	return axios.post<unknown, any>('/vendor/saveVendor', data).then(res => res.result);
+}
+
+// 加入黑名单
+export function saveBlackList(data: any) {
+	return axios.post<unknown, any>('/vendorBlackList/saveVendorBlackList', data).then(res => res.result);
+}

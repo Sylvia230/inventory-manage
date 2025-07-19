@@ -8,13 +8,23 @@ interface AuditModalProps {
   onCancel: () => void;
   onOk: (values: any) => void;
   loading?: boolean;
-  merchantData?: {
-    name: string;
-    address: string;
-    businessLicense?: string;
-    legalPerson: string;
-    businessScope: string;
-  };
+  merchantData?: Merchant | null;
+}
+
+
+interface Merchant {
+  id: string;
+  name: string;
+  creditCode: string;
+  legalPerson: string;
+  legalPersonId: string;
+  legalSignature: string;
+  companySignature: string;
+  contactPerson: string;
+  businessAddress: string;
+  creditLevel: 'A' | 'B' | 'C' | 'D';
+  creditLimit: number;
+  status: '待审核' | '正常' | '黑名单';
 }
 
 const AuditModal: React.FC<AuditModalProps> = ({

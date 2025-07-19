@@ -2,24 +2,43 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Form, Input, Select, Space, Row, Col, DatePicker, Modal, Cascader, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import styles from './index.module.less';
+import debounce from 'lodash/debounce';
 import { SearchOutlined, ReloadOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { getBankCardListApi } from '@/services/finance';
+import {
+  getBankBranchListApi,
+  getBankCardListApi,
+  getBankListApi,
+  getEnumApi,
+  getOwnerListApi,
+  saveBankCardApi
+} from '@/services/finance';
 import dayjs from 'dayjs';
+import {addWarehouseApi} from "@/services/wareHouse.ts";
 
 const { RangePicker } = DatePicker;
 
 interface BankCardRecord {
   key: string;
   accountName: string;
-  cardNumber: string;
+  bankAccount: string;
   bankName: string;
-  merchantId: string;
-  phone: string;
-  idNumber: string;
-  owner: string;
-  createTime: string;
-  idType?: string;
-  bankBranch?: string[];
+  bankId: string;
+  bankBranchId: string;
+  ownerType: number;
+  ownerId: string;
+  purposeList: [];
+}
+
+interface BankRecord {
+  id: string;
+  bankCode: string;
+  bankName: string;
+}
+
+interface OwnerRecord {
+  id: string;
+  ownerType: number;
+  name: string;
 }
 
 const BankCard: React.FC = () => {
@@ -36,6 +55,21 @@ const BankCard: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
+  const [ownerTypeList, setOwnerTypeList] = useState<Array<{value: string, name: string}>>([]);
+  const [purposeList, setPurposeList] = useState<Array<{value: string, name: string}>>([]);
+  const [ownerList, setOwnerList] = useState<Array<OwnerRecord>>([]);
+  const [bankList, setBankList] = useState<Array<BankRecord>>([]);
+  const [bankCode, setBankCode] = useState<string>('');
+  const [loadingBank, setLoadingBank] = useState(false);
+  const [bankBranchList, setBankBranchList] = useState<Array<{value: string, name: string}>>([]);
+  const [loadingBankBranch, setLoadingBankBranch] = useState(false);
+  const [loadingOwnerList, setLoadingOwnerList] = useState(false);
+  const [ownerTypeCode, setOwnerTypeCode] = useState<number>(1);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  })
 
   // 证件类型选项
   const idTypeOptions = [
@@ -83,65 +117,33 @@ const BankCard: React.FC = () => {
     {
       title: '银行账户户名',
       dataIndex: 'accountName',
-      width: 150,
+      width: 120,
     },
     {
       title: '卡号',
       dataIndex: 'bankAccount',
-      width: 180,
-      // render: (text: string) => {
-      //   // 只显示后四位，其他用*代替
-      //   const lastFour = text.slice(-4);
-      //   const masked = '*'.repeat(text.length - 4);
-      //   return `${masked}${lastFour}`;
-      // },
+      width: 100,
     },
     {
       title: '开户行',
       dataIndex: 'bankBranchName',
-      width: 150,
-    },
-    {
-      title: '商户id',
-      dataIndex: 'merchantId',
-      width: 150,
-    },
-    {
-      title: '绑定手机号',
-      dataIndex: 'phone',
-      width: 150,
-      // render: (text: string) => {
-      //   // 手机号中间四位用*代替
-      //   return text.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
-      // },
-    },
-    {
-      title: '证件号',
-      dataIndex: 'idNumber',
-      width: 180,
-      // render: (text: string) => {
-      //   // 身份证号中间用*代替
-      //   return text.replace(/(\d{4})\d{10}(\d{4})/, '$1**********$2');
-      // },
-    },
-    {
-      title: '归属方',
-      dataIndex: 'owner',
       width: 120,
     },
     {
-      title: '创建时间',
-      dataIndex: 'createTime',
-      width: 180,
-      render: (text: string) => {
-        return text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '';
-      },
+      title: '归属方类型',
+      dataIndex: 'ownerTypeDesc',
+      width: 80,
+    },
+    {
+      title: '用途',
+      dataIndex: 'purposeDescList',
+      width: 80,
     },
     {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 180,
+      width: 100,
       render: (_, record) => (
         <Space size="middle">
           <Button type="link" onClick={() => handleEdit(record)}>
@@ -161,6 +163,9 @@ const BankCard: React.FC = () => {
   // 获取数据
   useEffect(() => {
     fetchData();
+    getBankList();
+    getOwnerType();
+    getPurpose();
   }, [currentPage, pageSize]);
 
   const fetchData = async (searchParams?: any) => {
@@ -176,20 +181,6 @@ const BankCard: React.FC = () => {
       console.log('银行卡列表', res);
       
       if (res.result) {
-        // 转换API返回的数据格式为页面需要的格式
-        // const list = (res.result || []).map((item: any) => ({
-        //   key: item.id,
-        //   accountName: item.accountName,
-        //   cardNumber: item.cardNumber,
-        //   bankName: item.bankName,
-        //   merchantId: item.merchantId,
-        //   phone: item.phone,
-        //   idNumber: item.idNumber,
-        //   owner: item.owner,
-        //   createTime: item.createTime,
-        //   idType: item.idType,
-        //   bankBranch: item.bankBranch,
-        // }));
         
         setDataSource(res.result);
         setTotal(res.totalCount || 0);
@@ -199,6 +190,93 @@ const BankCard: React.FC = () => {
       message.error('获取数据失败');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 获取归属方类型枚举
+  const getOwnerType = async () => {
+    try {
+      const res = await getEnumApi('OwnerTypeEnum');
+      console.log(res, 'response');
+      // API返回的数据结构应该是一个数组，包含 {id, name} 或 {value, label} 格式
+      setOwnerTypeList(res || []);
+    } catch (error) {
+      console.error('获取归属方类型枚举数据失败:', error);
+      message.error('获取归属方类型枚举数据失败');
+    }
+  };
+
+  // 获取用途列表
+  const getPurpose = async () => {
+    try {
+      const res = await getEnumApi('BankCardPurposeEnum');
+      console.log(res, 'response');
+      // API返回的数据结构应该是一个数组，包含 {id, name} 或 {value, label} 格式
+      setPurposeList(res || []);
+    } catch (error) {
+      console.error('获取归属方类型枚举数据失败:', error);
+      message.error('获取归属方类型枚举数据失败');
+    }
+  };
+  // 获取归属方列表
+  const getOwnerList = async (name: String,code? :number) => {
+    setLoadingOwnerList(true);
+    try {
+      let res = [];
+      if (code) {
+        res = await getOwnerListApi(code,name);
+      } else {
+        res = await getOwnerListApi(ownerTypeCode,name);
+      }
+      console.log(res, 'response');
+      // API返回的数据结构应该是一个数组，包含 {id, name} 或 {value, label} 格式
+      setOwnerList(res || []);
+    } catch (error) {
+      console.error('获取数据失败:', error);
+      message.error('获取数据失败');
+    } finally {
+      setLoadingOwnerList(false);
+    }
+  };
+
+
+  // 获取银行数据
+  const getBankList = async (searchParams?: any) => {
+    setLoadingBank(true);
+    try {
+      const params = {
+        pageSize:1000,
+        ...searchParams
+      };
+      const res = await getBankListApi(params);
+      console.log(res, 'response');
+      // API返回的数据结构应该是一个数组，包含 {id, name} 或 {value, label} 格式
+      setBankList(res || []);
+    } catch (error) {
+      console.error('获取银行数据失败:', error);
+      message.error('获取银行数据失败');
+    } finally {
+      setLoadingBank(false);
+    }
+  };
+
+  // 获取支行数据
+  const getBankBranchList = async (searchParams?: any) => {
+    setLoadingBankBranch(true);
+    try {
+      const params = {
+        pageSize:1000,
+        ...searchParams
+      };
+      const res = await getBankBranchListApi(params);
+      console.log(res, 'response');
+      // API返回的数据结构应该是一个数组，包含 {id, name} 或 {value, label} 格式
+      setBankBranchList(res || []);
+    } catch (error) {
+      console.error('获取银行数据失败:', error);
+      message.error('获取银行数据失败');
+    } finally {
+      setLoadingBankBranch(false);
     }
   };
 
@@ -219,25 +297,21 @@ const BankCard: React.FC = () => {
     // TODO: 实现查看详情逻辑
   };
 
-  const showModal = () => {
-    setIsEdit(false);
-    setCurrentRecord(null);
-    setIsModalVisible(true);
-    addForm.resetFields();
-  };
-
   const handleEdit = (record: BankCardRecord) => {
     setIsEdit(true);
     setCurrentRecord(record);
     setIsModalVisible(true);
+    let ownerType = record.ownerType;
+    getOwnerList('',ownerType);
+    let bankId = record.bankId;
+    let bank:any = bankList.find((item: any) => item.id === bankId);
+    const bankBranchSearch = {
+      bankClscode:bank.bankCode
+    };
+    getBankBranchList(bankBranchSearch);
     // 设置表单初始值
     addForm.setFieldsValue({
-      accountName: record.accountName,
-      bankBranch: record.bankBranch,
-      cardNumber: record.cardNumber,
-      phone: record.phone,
-      idType: record.idType,
-      idNumber: record.idNumber,
+      ...record
     });
   };
 
@@ -249,20 +323,97 @@ const BankCard: React.FC = () => {
   };
 
   const handleAdd = async () => {
+    setIsEdit(false);
+    setCurrentRecord(null);
+    setIsModalVisible(true);
+    addForm.resetFields();
+  };
+
+  const handleModalSubmit = async () => {
     try {
-      const values = await addForm.validateFields();
+      let values = await addForm.validateFields();
       console.log('保存银行卡:', values);
       // TODO: 实现保存逻辑
-      message.success(isEdit ? '编辑成功' : '新增成功');
+      let bankId = values.bankId;
+      let bank:any = bankList.find((item: any) => item.id === bankId);
+      values.bankName = bank.bankName;
+      let bankBranchId = values.bankBranchId;
+      let bankBranch:any = bankBranchList.find((item: any) => item.id === bankBranchId);
+      values.bankBranchName = bankBranch.bankName;
+      let ownerId = values.ownerId;
+      let owner:any = ownerList.find((item: any) => item.id === ownerId);
+      values.ownerName = owner.name;
+      values.accountName = owner.name;
+      if (isEdit) {
+        values = ({ ...currentRecord, ...values })
+      }
+
+      await saveBankCardApi(values);
+      message.success('保存成功');
       setIsModalVisible(false);
       setIsEdit(false);
       setCurrentRecord(null);
       addForm.resetFields();
       fetchData(); // 刷新列表
+      getBankList();
     } catch (error) {
       console.error('表单验证失败:', error);
     }
   };
+
+  const handleBankSearch  = debounce((inputValue: string) =>{
+    if (/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/.test(inputValue)) {
+      // alert(inputValue.length)
+      getBankList({bankName:inputValue});
+    }
+  },400)
+
+  const handleOwnerSearch  = debounce((inputValue: string) =>{
+    if (/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/.test(inputValue)) {
+      // alert(inputValue.length)
+      getOwnerList(inputValue);
+    }
+  },400)
+
+
+
+  const handleBankBranchSearch  = debounce((inputValue: string) =>{
+    if (/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/.test(inputValue)) {
+
+      const params = {
+        bankName:inputValue,
+        bankClscode:bankCode
+      };
+      getBankBranchList(params);
+    }
+  },800)
+
+  // 处理银行变化
+  const handleBankChange = (bankPId: string) => {
+    let newBankCode = '';
+    if (bankPId) {
+      let bank:any = bankList.find((item: any) => item.id === bankPId);
+      newBankCode = bank.bankCode;
+      setBankCode(bank.bankCode);
+    }
+    form.setFieldsValue({
+      bankBranchId: undefined,
+    });
+    setBankBranchList([]);
+    if (newBankCode) {
+      getBankBranchList({bankClscode:newBankCode});
+    }
+  };
+
+
+  // 处理归属方类型变化
+  const handleOwnerTypeChange = (code: number) => {
+    setOwnerTypeCode(code);
+    if (code) {
+      getOwnerList('',code)
+    }
+  };
+
 
   const handleDelete = (record: BankCardRecord) => {
     setRecordToDelete(record);
@@ -290,11 +441,6 @@ const BankCard: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      {/* <div className={styles.header}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={showModal}>
-          新增银行卡
-        </Button>
-      </div> */}
 
       <Form
         form={form}
@@ -304,7 +450,7 @@ const BankCard: React.FC = () => {
         <Row gutter={24} style={{ width: '100%' }}>
           <Col span={8}>
             <Form.Item
-              name="cardNumber"
+              name="bankAccount"
               label="银行卡账号"
             >
               <Input placeholder="请输入银行卡账号" allowClear />
@@ -318,27 +464,7 @@ const BankCard: React.FC = () => {
               <Input placeholder="请输入户名" allowClear />
             </Form.Item>
           </Col>
-          <Col span={8}>
-            <Form.Item
-              name="bankName"
-              label="银行"
-            >
-              <Select
-                placeholder="请选择银行"
-                options={bankOptions}
-                allowClear
-              />
-            </Form.Item>
-          </Col>
         </Row>
-        <Col span={8}>
-            <Form.Item
-              name="createTime"
-              label="创建时间"
-            >
-              <RangePicker style={{ width: '100%' }} />
-            </Form.Item>
-          </Col>
         <Row gutter={24} style={{ width: '100%' }}>
           <Col span={6}>
             <Space>
@@ -348,7 +474,7 @@ const BankCard: React.FC = () => {
               <Button icon={<ReloadOutlined />} onClick={handleReset}>
                 重置
               </Button>
-              <Button type="primary" icon={<PlusOutlined />} onClick={showModal}>
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
                 新增银行卡
               </Button>
             </Space>
@@ -378,82 +504,111 @@ const BankCard: React.FC = () => {
       <Modal
         title={isEdit ? '编辑银行卡' : '新增银行卡'}
         open={isModalVisible}
-        onOk={handleAdd}
+        onOk={handleModalSubmit}
         onCancel={handleCancel}
         width={600}
       >
         <Form
           form={addForm}
-          layout="inline"
+          layout="vertical"
           requiredMark={false}
         >
           <Form.Item
-            name="accountName"
-            label="户名"
-            rules={[{ required: true, message: '请输入户名' }]}
-            style={{ width: '100%' }}
+              name="ownerType"
+              label="归属方类型"
+              style={{ width: '100%' }}
           >
-            <Input placeholder="请输入户名" />
+            <Select
+                placeholder="请选择归属方类型"
+                style={{ width: '100%' }}
+                onChange={handleOwnerTypeChange}
+                options={ownerTypeList.map(type => ({
+                  label: type.desc,
+                  value: type.code,
+                }))}
+            />
           </Form.Item>
-
           <Form.Item
-            name="bankBranch"
-            label="开户支行"
-            rules={[{ required: true, message: '请选择开户支行' }]}
-            style={{ width: '100%' }}
+              name="ownerId"
+              label="归属方"
+              style={{ width: '100%' }}
           >
-            <Cascader
-              options={bankOptions}
-              placeholder="请选择开户支行"
-              expandTrigger="hover"
+            <Select
+                showSearch
+                allowClear
+                loading={loadingOwnerList}
+                filterOption={false}
+                onSearch={handleOwnerSearch}
+                placeholder="请选择归属方"
+                options={ownerList.map((item:any) => ({
+                  label:item.name,
+                  value:item.id
+                }))}
             />
           </Form.Item>
 
           <Form.Item
-            name="cardNumber"
+              name="bankId"
+              label="开户行"
+              rules={[{ required: true, message: '请选择开户行' }]}
+          >
+            <Select
+                showSearch
+                allowClear
+                loading={loadingBank}
+                filterOption={false}
+                onSearch={handleBankSearch}
+                onChange={handleBankChange}
+                placeholder="请选择开户行"
+                options={bankList.map((item:any) => ({
+                  label:item.bankName,
+                  value:item.id
+                }))}
+            />
+          </Form.Item>
+          <Form.Item
+              name="bankBranchId"
+              label="支行"
+              rules={[{ required: true, message: '请选择开户支行' }]}
+          >
+            <Select
+                showSearch
+                allowClear
+                loading={loadingBankBranch}
+                filterOption={false}
+                onSearch={handleBankBranchSearch}
+                placeholder="请选择开户支行"
+                options={bankBranchList.map((item:any) => ({
+                  label:item.bankName,
+                  value:item.id
+                }))}
+            />
+          </Form.Item>
+          <Form.Item
+            name="bankAccount"
             label="账户"
             rules={[
               { required: true, message: '请输入账户' },
-              { pattern: /^\d{16,19}$/, message: '请输入16-19位数字' }
+              { pattern: /^\d{7,19}$/, message: '请输入7-19位数字' }
             ]}
             style={{ width: '100%' }}
           >
             <Input placeholder="请输入账户" />
           </Form.Item>
-
           <Form.Item
-            name="phone"
-            label="手机号"
-            rules={[
-              { required: true, message: '请输入手机号' },
-              { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' }
-            ]}
-            style={{ width: '100%' }}
-          >
-            <Input placeholder="请输入手机号" />
-          </Form.Item>
-
-          <Form.Item
-            name="idType"
-            label="证件类型"
-            style={{ width: '100%' }}
+              name="purposeList"
+              label="用途"
+              rules={[{ required: false, message: '请选择用途' }]}
           >
             <Select
-              placeholder="请选择证件类型"
-              options={idTypeOptions}
-              allowClear
+                mode="multiple"
+                placeholder="请选择用途"
+                style={{ width: '100%' }}
+                options={purposeList.map(purpose => ({
+                  label: purpose.desc,
+                  value: purpose.code,
+                }))}
             />
-          </Form.Item>
-
-          <Form.Item
-            name="idNumber"
-            label="证件编号"
-            rules={[
-              { pattern: /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/, message: '请输入正确的证件编号' }
-            ]}
-            style={{ width: '100%' }}
-          >
-            <Input placeholder="请输入证件编号" />
           </Form.Item>
         </Form>
       </Modal>
@@ -471,7 +626,7 @@ const BankCard: React.FC = () => {
         <p>确定要删除该银行卡吗？</p>
         {recordToDelete && (
           <p style={{ color: '#666', fontSize: '14px' }}>
-            卡号：{recordToDelete.cardNumber.replace(/(\d{4})\d+(\d{4})/, '$1****$2')}
+            卡号：{recordToDelete.bankAccount.replace(/(\d{4})\d+(\d{4})/, '$1****$2')}
           </p>
         )}
       </Modal>
