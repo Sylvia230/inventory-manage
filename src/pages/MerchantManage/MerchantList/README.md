@@ -1,129 +1,199 @@
-# 商家列表页面 - 新增商家功能
+# 商家管理页面标签功能说明
 
 ## 功能概述
 
-在商家列表页面添加了新增商家功能，支持通过弹窗表单添加新的商家信息。
+商家管理页面的标签功能允许用户为商家添加标签，支持从现有标签中选择或创建新标签。
 
-## 新增功能
+## 主要功能
 
-### 1. 新增按钮
-- 位置：搜索表单区域，与查询、重置按钮并列
-- 样式：主要按钮（蓝色）
-- 功能：点击打开新增商家弹窗
+### 1. 标签选择功能
 
-### 2. 新增商家弹窗
+#### 功能入口
+- 在商家列表的操作列中有"新增标签"按钮
+- 点击按钮弹出添加标签弹窗
 
-#### 表单字段
-1. **客户名**（必填）
-   - 类型：文本输入框
-   - 占位符：请填写公司名称
-   - 验证：必填项
+#### 标签选择弹窗
+- **标签选择器**: 支持搜索和选择标签
+  - 调用`GetTagListApi`接口获取现有标签
+  - 支持按标签名称搜索
+  - 如果输入的标签不存在，会自动添加为新标签选项
 
-2. **主营业务**（必填）
-   - 类型：文本输入框
-   - 占位符：请填写主营业务
-   - 验证：必填项
+### 2. 标签匹配逻辑
 
-3. **经营场地类型**（必填）
-   - 类型：下拉选择框
-   - 选项：自有场地、租赁场地、合作场地
-   - 验证：必填项
+#### 现有标签匹配
+- 当用户输入搜索文本时，调用`GetTagListApi`接口
+- 接口参数：`{ page: 1, pageSize: 100, name: searchText }`
+- 将返回的标签数据转换为Select组件需要的格式
 
-4. **产品类型**（必填）
-   - 类型：下拉选择框
-   - 选项：新车、二手车、试驾车
-   - 验证：必填项
+#### 新标签创建
+- 如果用户输入的标签名称在现有标签中不存在
+- 会自动在选项列表顶部添加新标签选项
+- 新标签选项标记为`isNew: true`，颜色为绿色
 
-5. **资金总额（万）**（必填）
-   - 类型：数字输入框
-   - 单位：万元
-   - 精度：保留2位小数
-   - 最小值：0
+### 3. 标签提交逻辑
 
-6. **负债总额（万）**（必填）
-   - 类型：数字输入框
-   - 单位：万元
-   - 精度：保留2位小数
-   - 最小值：0
+#### 标签类型判断
+- 检查选中的标签是否为新建标签
+- 通过`isNew`属性判断是否为新标签
+- 新标签的`value`不包含ID格式
 
-7. **营业收入（万）**（必填）
-   - 类型：数字输入框
-   - 单位：万元
-   - 精度：保留2位小数
-   - 最小值：0
+#### 新标签处理
+- 如果是新标签，先调用`AddTagApi`创建标签
+- 创建成功后获取新标签的ID
+- 然后调用商家标签关联API
 
-8. **员工人数（人）**（必填）
-   - 类型：数字输入框
-   - 单位：人
-   - 精度：整数
-   - 最小值：1
+#### 现有标签处理
+- 直接使用现有标签的ID
+- 调用商家标签关联API
 
-9. **主要交易对手名称**（必填）
-   - 类型：文本输入框
-   - 占位符：请填写公司名称
-   - 验证：必填项
+### 4. 用户体验优化
 
-#### 弹窗特性
-- **宽度**：800px
-- **布局**：垂直布局（layout="vertical"）
-- **表单验证**：所有字段都有必填验证
-- **按钮**：取消、确定按钮
-- **响应式**：使用Row和Col组件实现响应式布局
+#### 搜索防抖
+- 使用`lodash/debounce`实现500ms防抖
+- 避免频繁调用API接口
 
-### 3. 数据处理
+#### 加载状态
+- 搜索时显示加载动画
+- 提交时显示确认按钮加载状态
 
-#### API接口
-- **接口名称**：`AddVendorApi`
-- **请求方式**：POST
-- **接口路径**：`/vendor/add`
+#### 错误处理
+- API调用失败时显示错误提示
+- 表单验证失败时阻止提交
 
-#### 请求参数
+## API接口
+
+### 获取标签列表
 ```typescript
-{
-  customerName: string;        // 客户名
-  mainBusiness: string;        // 主营业务
-  venueType: string;          // 经营场地类型
-  totalCapital: number;       // 资金总额（万）
-  totalDebt: number;          // 负债总额（万）
-  revenue: number;            // 营业收入（万）
-  employeeCount: number;      // 员工人数（人）
-  mainTradingPartner: string; // 主要交易对手名称
-  productType: string;        // 产品类型
+GetTagListApi(params: {
+  page: number;
+  pageSize: number;
+  name?: string;
+})
+```
+
+### 创建新标签
+```typescript
+AddTagApi(params: {
+  name: string;
+  color?: string;
+})
+```
+
+### 添加商家标签（待实现）
+```typescript
+AddMerchantTagApi(params: {
+  vendorId: string;
+  tagId: string;
+})
+```
+
+## 数据结构
+
+### 标签选项接口
+```typescript
+interface TagOption {
+  value: string;
+  label: string;
+  color?: string;
+  isNew?: boolean;
 }
 ```
 
-#### 成功处理
-- 显示成功提示消息
-- 关闭弹窗
-- 清空表单数据
-- 刷新商家列表
+### API返回的标签数据格式
+```typescript
+interface TagApiResponse {
+  id: string;
+  name: string;
+  color?: string;
+}
+```
 
-#### 错误处理
-- 显示错误提示消息
-- 保持弹窗打开状态
-- 保留已填写的数据
+## 状态管理
 
-## 使用说明
+### 标签相关状态
+- `selectedTags`: 选中的标签数组
+- `tagOptions`: 标签选项列表
+- `fetching`: 标签搜索加载状态
+- `tagModalVisible`: 标签弹窗显示状态
 
-1. **访问路径**：`/merchant/list`
-2. **操作步骤**：
-   - 点击"新增商家"按钮
-   - 填写所有必填字段
-   - 点击"确定"提交
-   - 或点击"取消"关闭弹窗
+## 实现细节
+
+### 1. 标签搜索逻辑
+```typescript
+const fetchTagOptions = async (searchText: string) => {
+  // 调用API获取标签列表
+  const response = await GetTagListApi({
+    page: 1,
+    pageSize: 100,
+    name: searchText || undefined
+  });
+  
+  // 转换数据格式
+  const tagData = response.result.map((item: any) => ({
+    value: item.id,
+    label: item.name,
+    color: item.color || 'blue'
+  }));
+  
+  // 添加新标签选项
+  if (searchText && !tagData.some((tag: any) => 
+    tag.label.toLowerCase() === searchText.toLowerCase()
+  )) {
+    tagData.unshift({
+      value: searchText,
+      label: searchText,
+      color: 'green',
+      isNew: true
+    });
+  }
+  
+  setTagOptions(tagData);
+};
+```
+
+### 2. 标签提交逻辑
+```typescript
+const handleTagSubmit = async (values: any) => {
+  // 检查是否选择了标签
+  if (!selectedTags || selectedTags.length === 0) {
+    message.warning('请选择或输入标签');
+    return;
+  }
+
+  // 判断是否为新标签
+  const selectedTag = tagOptions.find(tag => tag.value === selectedTags[0]);
+  const isNewTag = selectedTag && selectedTag.isNew;
+
+  if (isNewTag) {
+    // 创建新标签
+    const createTagRes = await AddTagApi({
+      name: selectedTag.label,
+      color: selectedTag.color || 'blue'
+    });
+  }
+
+  // 关联商家和标签
+  // await AddMerchantTagApi({
+  //   vendorId: selectedMerchant?.id,
+  //   tagId: isNewTag ? createTagRes.id : selectedTags[0]
+  // });
+};
+```
 
 ## 注意事项
 
-- 所有字段都是必填项
-- 数字字段有最小值限制
-- 金额字段支持小数点后2位
-- 员工人数必须为正整数
-- 表单提交时会显示加载状态
+1. 新标签创建时会自动设置颜色为绿色
+2. 标签搜索支持模糊匹配
+3. 防抖处理避免频繁API调用
+4. 错误处理确保用户体验
+5. 表单验证防止空标签提交
+6. 状态重置确保弹窗数据清空
 
-## 后续优化建议
+## 扩展功能
 
-- [ ] 添加字段验证规则（如手机号格式、邮箱格式等）
-- [ ] 支持文件上传（如营业执照、身份证等）
-- [ ] 添加字段说明和帮助提示
-- [ ] 支持表单数据本地缓存
-- [ ] 添加批量导入功能 
+### 未来可能的改进
+1. 支持多标签选择
+2. 标签颜色自定义
+3. 标签分类管理
+4. 标签使用统计
+5. 标签权限控制 

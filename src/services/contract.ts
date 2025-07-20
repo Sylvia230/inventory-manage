@@ -103,3 +103,8 @@ export function RemoveContractTemplateSignerApi(data: any): Promise<ResponseData
 export function DeleteContractTemplateApi(data: any): Promise<ResponseData<any>> {
   return yApiRequest.post('/contractTemplate/removeContractTemplate?id=' + data.id).then(res => res.result);
 }
+
+// 分页查询合同列表
+export function GetContractApi(data: any): Promise<any> {
+  return yApiRequest.post('/orderContract/pageQuery', data).then(res => res.result);
+}

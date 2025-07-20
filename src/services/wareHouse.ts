@@ -114,3 +114,28 @@ export const getGpsListApi = async (params: any): Promise<any> => {
 export const inboundOperationApi = async (params: any): Promise<any> => {
     return axios.post(`/wmsInbound/inbound`, params).then(res => res.result);
 };
+
+// 绑定GPS
+export const bindGPSApi = async (params: any): Promise<any> => {
+    return axios.post(`/wmsCar/bindingGps`, params).then(res => res);
+};
+
+// 获取在库车辆列表
+export const getInStockVehicleListApi = async (params: any): Promise<any> => {
+    return axios.post(`/wmsCar/pageQuery`, params).then(res => res);
+};
+
+// 获取在库车辆详情
+export const getInStockVehicleDetailApi = async (params: any): Promise<any> => {
+    return axios.get(`/wmsCar/detail`, params).then(res => res);
+};
+
+// 出库管理
+export const getOutboundListApi = async (params: any): Promise<any> => {
+    return axios.post(`/wmsOutbound/pageQuery`, params).then(res => res);
+};
+
+// 出库操作
+export const getOutboundDetailApi = async (params: any): Promise<any> => {
+    return axios.get(`/wmsOutbound/removeWmsOutbound`, params).then(res => res);
+};

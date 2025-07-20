@@ -17,7 +17,7 @@ export function GetCreditLimitListApi(data: any) {
 
 // 保存授信额度
 export function SaveCreditLimitApi(data: any) {
-	return axios.post<unknown, any>('/creditLimit/save', data).then(res => res.result);
+	return axios.post<unknown, any>('/vendorCredit/saveVendorCredit', data).then(res => res.result);
 }
 
 // 删除授信额度
@@ -43,4 +43,39 @@ export function saveVendorApi(data: any) {
 // 加入黑名单
 export function saveBlackList(data: any) {
 	return axios.post<unknown, any>('/vendorBlackList/saveVendorBlackList', data).then(res => res.result);
+}
+
+// 获取黑名单列表
+export function GetBlackListApi(data: any) {
+	return axios.post<unknown, any>('/vendorBlackList/pageQuery', data).then(res => res.result);
+}
+
+// 添加黑名单
+export function AddBlackListApi(data: any) {
+	return axios.post<unknown, any>('/vendorBlackList/saveVendorBlackList', data).then(res => res.result);
+}
+
+// 移除黑名单
+export function RemoveBlackListApi(data: any) {
+	return axios.post<unknown, any>('/vendorBlackList/removeVendorBlackList?id=' + data.id).then(res => res.result);
+}
+
+// 新增标签
+export function AddTagApi(data: any) {
+	return axios.post<unknown, any>('/bizTag/saveBizTag', data).then(res => res.result);
+}
+
+// 获取标签列表
+export function GetTagListApi(data: any) {
+	return axios.post<unknown, any>('/bizTag/pageQuery', data).then(res => res.result);
+}
+
+// 保存标签关系接口
+export function SaveTagRelationApi(data: any) {
+	return axios.post<unknown, any>('/bizTagRelation/saveBizTagRelationBatch', data).then(res => res.result);
+}
+
+// 保存标签关系接口
+export function DetailAPi(id: any) {
+	return axios.get<unknown, any>('/vendor/detail?id='+id).then(res => res.result);
 }

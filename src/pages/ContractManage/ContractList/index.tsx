@@ -1,23 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Table, Button, Form, Input, Space, Row, Col, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import styles from './index.module.less';
 import { SearchOutlined, ReloadOutlined, EyeOutlined } from '@ant-design/icons';
-import { GetContractTemplateApi } from '@/services/contract';
+import { GetContractApi } from '@/services/contract';
+import axios from "axios";
 
 interface ContractRecord {
-  key: string;
+  id: string;
+  contractTypeDesc: string;
   orderId: string;
-  customerName: string;
+  orderNo: string;
+  carId: string;
+  vin: string;
+  contractId: string;
+  path: string;
+  vendorName: string;
   contractName: string;
-  contractNo: string;
-  status: string;
-  type: string;
+  signStatusDesc: string;
 }
 
 const ContractList: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [dataSource, setDataSource] = useState<ContractRecord[]>([]);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  })
+
+  // 获取数据
+  useEffect(() => {
+    handleSearch();
+  }, [pagination.current, pagination.pageSize]);
+
+
 
   // 合同状态选项
   const statusOptions = [
@@ -39,14 +57,14 @@ const ContractList: React.FC = () => {
   const columns: ColumnsType<ContractRecord> = [
     {
       title: '订单号',
-      dataIndex: 'orderId',
-      key: 'orderId',
+      dataIndex: 'orderNo',
+      key: 'orderNo',
       width: 180,
     },
     {
       title: '客户名称',
-      dataIndex: 'customerName',
-      key: 'customerName',
+      dataIndex: 'vendorName',
+      key: 'vendorName',
       width: 150,
     },
     {
@@ -56,15 +74,9 @@ const ContractList: React.FC = () => {
       width: 200,
     },
     {
-      title: '合同编号',
-      dataIndex: 'contractNo',
-      key: 'contractNo',
-      width: 180,
-    },
-    {
       title: '合同状态',
-      dataIndex: 'status',
-      key: 'status',
+      dataIndex: 'signStatusDesc',
+      key: 'signStatusDesc',
       width: 100,
       render: (text) => {
         const option = statusOptions.find(opt => opt.value === text);
@@ -75,8 +87,8 @@ const ContractList: React.FC = () => {
     },
     {
       title: '合同类型',
-      dataIndex: 'type',
-      key: 'type',
+      dataIndex: 'contractTypeDesc',
+      key: 'contractTypeDesc',
       width: 120,
       render: (text) => {
         const option = typeOptions.find(opt => opt.value === text);
@@ -102,47 +114,57 @@ const ContractList: React.FC = () => {
     },
   ];
 
-  // 模拟数据
-  const dataSource: ContractRecord[] = [
-    {
-      key: '1',
-      orderId: 'DD202403150001',
-      customerName: '张三',
-      contractName: '车辆购买合同',
-      contractNo: 'HT202403150001',
-      status: 'pending',
-      type: 'purchase',
-    },
-    {
-      key: '2',
-      orderId: 'DD202403150002',
-      customerName: '李四',
-      contractName: '车辆租赁合同',
-      contractNo: 'HT202403150002',
-      status: 'signed',
-      type: 'lease',
-    },
-  ];
-
   // 查看
-  const handleView = (record: ContractRecord) => {
+  const handleView = async (record: ContractRecord) => {
     console.log('查看合同:', record);
+    try {
+      const token = localStorage.getItem('token')
+      // 通过 axios 请求图片（会走拦截器）
+      const response = await axios.get(
+          record.path,
+          {
+            responseType: 'blob', // 重要：指定响应类型为二进制
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+      );
+
+      // 创建 Blob URL
+      const url = URL.createObjectURL(response.data);
+      window.open(url);
+    } catch (error) {
+      console.error('加载图片失败', error);
+    }
   };
 
   // 搜索
   const handleSearch = async () => {
+    setLoading(true);
     try {
       const values = await form.validateFields();
+      const params = {
+        ...values,
+        pageNo: pagination.current,
+        pageSize: pagination.pageSize,
+      }
       console.log('搜索条件:', values);
-      setLoading(true);
-      // TODO: 实现搜索逻辑
-      setTimeout(() => {
-        setLoading(false);
-      }, 1000);
+      const res = await GetContractApi(params);
+      setDataSource(res?.result);
+      setPagination(prev => ({
+        ...prev,
+        total: res?.totalCount || 0
+      }));
     } catch (error) {
-      console.error('表单验证失败:', error);
+      console.error('查询数据失败:', error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleTableChange = (newPagination: any) => {
+    setPagination(newPagination)
+  }
 
   // 重置
   const handleReset = () => {
@@ -159,7 +181,7 @@ const ContractList: React.FC = () => {
         <Row gutter={24} style={{ width: '100%' }}>
           <Col span={8}>
             <Form.Item
-              name="orderId"
+              name="orderNo"
               label="订单号"
             >
               <Input placeholder="请输入订单号" />
@@ -167,7 +189,7 @@ const ContractList: React.FC = () => {
           </Col>
           <Col span={8}>
             <Form.Item
-              name="customerName"
+              name="vendorName"
               label="客户名称"
             >
               <Input placeholder="请输入客户名称" />
@@ -200,13 +222,13 @@ const ContractList: React.FC = () => {
         dataSource={dataSource}
         loading={loading}
         pagination={{
-          total: dataSource.length,
-          pageSize: 10,
+          ...pagination,
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
+          showTotal: (total) => `共 ${total} 条`
         }}
-        scroll={{ x: 1200 }}
+        onChange={handleTableChange}
+        scroll={{ x: 1100 }}
       />
     </div>
   );

@@ -217,11 +217,11 @@ const menuRoutes: MenuRoute[] = [
             path: '/merchant/blacklist',
             element: <BlackListManage />
           },
-          {
-            name: '签章人管理',
-            path: '/merchant/signature',
-            element: <SignatureManage />
-          },
+          // {
+          //   name: '签章人管理',
+          //   path: '/merchant/signature',
+          //   element: <SignatureManage />
+          // },
         ]
       },
       {
