@@ -150,18 +150,23 @@ const WaybillList: React.FC = () => {
       width: 180,
     },
     {
-      title: '联系人电话',
-      dataIndex: 'driverPhone',
+      title: '联系人',
+      dataIndex: 'pickupContactName',
       width: 150,
     },
     {
-      title: '预计到达时间',
-      dataIndex: 'reachTime',
-      width: 180,
-      render: (_, record:any) => {
-        return record.reachTime ? dayjs(record.reachTime).format('YYYY-MM-DD HH:mm:ss') : '';
-      },
+      title: '联系人电话',
+      dataIndex: 'pickupContactPhone',
+      width: 150,
     },
+    // {
+    //   title: '预计到达时间',
+    //   dataIndex: 'reachTime',
+    //   width: 180,
+    //   render: (_, record:any) => {
+    //     return record.reachTime ? dayjs(record.reachTime).format('YYYY-MM-DD HH:mm:ss') : '';
+    //   },
+    // },
     {
       title: '保险单号',
       dataIndex: 'insuranceNo',
