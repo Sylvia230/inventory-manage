@@ -1,0 +1,1 @@
+import{y as r}from"./index-D8ReppmJ.js";function n(e){return r.post("/car/pageQuery",e).then(t=>t)}function a(e){return r.post("/carBrand/pageQuery",e).then(t=>t)}function s(e){return r.post("/carSeries/pageQuery",e).then(t=>t)}function p(e){return r.post("/carVehicle/pageQuery",e).then(t=>t)}export{n as G,a,s as b,p as c};

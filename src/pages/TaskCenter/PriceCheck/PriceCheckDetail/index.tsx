@@ -99,7 +99,7 @@ const PriceCheckDetail: React.FC = () => {
           if (actualPrice) {
             pricingCarResultDTOList.push({
               carId: vehicle.id,
-              pricingLoanAmount: actualPrice,
+              pricingLoanAmount: actualPrice * 100,
             //   remarks: remarks || ''
             });
           }
