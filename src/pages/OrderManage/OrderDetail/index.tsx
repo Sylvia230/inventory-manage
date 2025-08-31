@@ -10,6 +10,7 @@ import LogisticsInfo from './LogisticsInfo';
 import SettlementInfo from './SettlementInfo';
 import AccountInfo from './AccountInfo';
 import orderStore from '@/stores/order';
+import {GetDetailApi} from "@/services/order.ts";
 // import OrderTable from './OrderTable';
 
 const OrderDetail: React.FC = observer(() => {
@@ -28,20 +29,18 @@ const OrderDetail: React.FC = observer(() => {
   
   useEffect(() => {
     if (id) {
-      console.log('详情页面检查store中的当前订单:', orderStore.currentOrder);
-      
-      // 优先从 store 中获取当前订单数据
-      if (orderStore.currentOrder && (orderStore.currentOrder.orderNumber === id || orderStore.currentOrder.id === id)) {
-        console.log('详情页面从store获取到当前订单数据:', orderStore.currentOrder);
-        setOrderDetail(orderStore.currentOrder);
-      } else {
-        // 如果 store 中没有当前订单数据，尝试从订单列表中查找
-        const orderData = orderStore.getOrderByNo(id);
-        console.log('...orderData', orderData)
-        setOrderDetail(orderData);
-      }
+      fetchDetail(id);
     }
   }, [id]);
+
+  const fetchDetail = async (orderNo: string) => {
+    try {
+      const res = await GetDetailApi(orderNo);
+      setOrderDetail(res);
+    } catch (error) {
+      message.error("加载详情失败")
+    }
+  }
   
   if (!orderDetail) {
     return <div>加载中...</div>;
@@ -51,7 +50,7 @@ const OrderDetail: React.FC = observer(() => {
     {
       key: 'basic',
       label: '基本信息',
-      children: <BasicInfo orderDetail={orderDetail} />,
+      children: <BasicInfo orderSimpleDTO={orderDetail.orderSimpleDTO} />,
     },
     {
       key: 'vehicle',

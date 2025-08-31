@@ -121,7 +121,7 @@ const ContractList: React.FC = () => {
       const token = localStorage.getItem('token')
       // 通过 axios 请求图片（会走拦截器）
       const response = await axios.get(
-          record.path,
+          '/gdv'+record.path,
           {
             responseType: 'blob', // 重要：指定响应类型为二进制
             headers: {

@@ -335,6 +335,7 @@ const CreditLimit: React.FC = () => {
       let values = await addForm.validateFields();
       let vendor = vendorList.find((item: any) => item.id === values.vendorId);
       values.vendorName = vendor.name;
+      values.creditAmount = values?.creditAmount * 100;
       await SaveCreditLimitApi(values);
       message.success("保存成功");
       setAddModalVisible(false);
