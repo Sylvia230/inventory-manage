@@ -267,7 +267,7 @@ const SettlementDetail: React.FC = observer(() => {
       message.success('调价成功');
       // 清理store中的当前结算单数据
       financeStore.setCurrentSettlement(null);
-      navigate('/financeManage/settlement');
+      navigate('/financeManage/balance');
     } catch (error) {
       console.error('调价失败:', error);
       message.error('调价失败，请重试');
