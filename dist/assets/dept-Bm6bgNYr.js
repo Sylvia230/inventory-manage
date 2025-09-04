@@ -1,1 +1,0 @@
-import{y as s}from"./index-D8ReppmJ.js";const p=async e=>s.post("/userDept/pageQuery",e).then(t=>t),a=async e=>s.post("/userStaff/pageQuery",e).then(t=>t.result),n=async e=>s.post("/userDept/saveUserDept",e).then(t=>t),o=async e=>s.post("/userDept/removeUserDept?id="+e);export{a,o as d,p as g,n as s};

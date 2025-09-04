@@ -467,7 +467,7 @@ const SettlementDetail: React.FC = observer(() => {
                  style={{ flex: 1 }}
                >
                  <Input
-                   value={`¥${settlementInfo.amount.toLocaleString()}`}
+                   value={`¥${settlementInfo.amountStr}`}
                    disabled
                    style={{ backgroundColor: '#f5f5f5' }}
                  />
